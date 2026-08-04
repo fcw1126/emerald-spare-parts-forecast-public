@@ -1,0 +1,1598 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>Emerald Nonwovens | 設備零件更換備料預測</title>
+<style>
+  :root{
+    color-scheme: light;
+    --surface-1:      #ffffff;
+    --surface-2:      #fcfcfb;
+    --page-plane:     #f4f4f2;
+    --text-primary:   #0b0b0b;
+    --text-secondary: #52514e;
+    --muted:          #898781;
+    --gridline:       #eceae4;
+    --baseline:       #c3c2b7;
+    --border:         rgba(11,11,11,0.08);
+    --accent:         #2a78d6;
+    --accent-soft:    rgba(42,120,214,0.10);
+    --seq-250: #86b6ef;
+    --seq-350: #5598e7;
+    --seq-450: #2a78d6;
+    --seq-550: #1c5cab;
+    --seq-650: #104281;
+    --cat-1: #2a78d6; /* blue     - ELECTRICAL */
+    --cat-2: #eb6834; /* orange   - MECHANICAL */
+    --cat-3: #1baf7a; /* aqua     - PNEUMATIC */
+    --cat-4: #eda100; /* yellow   - SUPPLIES */
+    --cat-5: #e87ba4; /* magenta  - LUBRICATION */
+    --good:     #0ca30c;
+    --warning:  #fab219;
+    --serious:  #ec835a;
+    --critical: #d03b3b;
+    --mixed:    #7c5cbf;
+    --good-text: #006300;
+    --shadow-sm: 0 1px 2px rgba(11,11,11,0.04), 0 1px 1px rgba(11,11,11,0.03);
+    --shadow-md: 0 4px 16px rgba(11,11,11,0.06), 0 1px 3px rgba(11,11,11,0.05);
+    --shadow-lg: 0 12px 40px rgba(11,11,11,0.14), 0 2px 8px rgba(11,11,11,0.08);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:where(:not([data-theme="light"])){
+      color-scheme: dark;
+      --surface-1:      #201f1e;
+      --surface-2:      #1a1a19;
+      --page-plane:     #0d0d0d;
+      --text-primary:   #ffffff;
+      --text-secondary: #c3c2b7;
+      --muted:          #8f8d86;
+      --gridline:       #2c2c2a;
+      --baseline:       #383835;
+      --border:         rgba(255,255,255,0.09);
+      --accent:         #3987e5;
+      --accent-soft:    rgba(57,135,229,0.16);
+      --seq-250: #86b6ef; --seq-350: #5598e7; --seq-450: #3987e5; --seq-550: #184f95; --seq-650: #104281;
+      --cat-1: #3987e5; --cat-2: #d95926; --cat-3: #199e70; --cat-4: #c98500; --cat-5: #d55181;
+      --good: #0ca30c; --warning: #fab219; --serious: #ec835a; --critical: #e66767; --mixed: #9a80d6;
+      --good-text: #0ca30c;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+      --shadow-md: 0 4px 16px rgba(0,0,0,0.4);
+      --shadow-lg: 0 20px 60px rgba(0,0,0,0.55);
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --surface-1:      #201f1e;
+    --surface-2:      #1a1a19;
+    --page-plane:     #0d0d0d;
+    --text-primary:   #ffffff;
+    --text-secondary: #c3c2b7;
+    --muted:          #8f8d86;
+    --gridline:       #2c2c2a;
+    --baseline:       #383835;
+    --border:         rgba(255,255,255,0.09);
+    --accent:         #3987e5;
+    --accent-soft:    rgba(57,135,229,0.16);
+    --seq-250: #86b6ef; --seq-350: #5598e7; --seq-450: #3987e5; --seq-550: #184f95; --seq-650: #104281;
+    --cat-1: #3987e5; --cat-2: #d95926; --cat-3: #199e70; --cat-4: #c98500; --cat-5: #d55181;
+    --good: #0ca30c; --warning: #fab219; --serious: #ec835a; --critical: #e66767; --mixed: #9a80d6;
+    --good-text: #0ca30c;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.4);
+    --shadow-lg: 0 20px 60px rgba(0,0,0,0.55);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin:0; padding:0; background: var(--page-plane); color: var(--text-primary);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif; overflow-x: hidden; }
+  body { padding: 0 0 60px; }
+  ::selection { background: var(--accent-soft); }
+
+  .top-accent { height: 5px; background: linear-gradient(90deg, var(--cat-1), var(--cat-3), var(--cat-4), var(--cat-2), var(--cat-5)); }
+
+  .hero {
+    background: linear-gradient(120deg, #1c5cab 0%, #2a78d6 45%, #1baf7a 100%);
+    padding: 26px 32px 22px;
+    position: relative;
+  }
+  .hero-inner { max-width: 1440px; margin: 0 auto; display:flex; align-items:flex-start; justify-content:space-between; gap:20px; flex-wrap:wrap; position: relative; z-index: 1; }
+  .eyebrow {
+    display:inline-flex; align-items:center; gap:6px; font-size: 11.5px; font-weight:700;
+    color: rgba(255,255,255,0.92); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px;
+  }
+  .eyebrow .dot { width:6px; height:6px; border-radius:50%; background: #fff; }
+  .brand h1 { font-size: 22px; margin: 0 0 6px; font-weight: 700; letter-spacing: -0.01em; color: #fff; }
+  .brand .sub { color: rgba(255,255,255,0.9); font-size: 13.5px; margin: 0; max-width: 660px; line-height:1.5; }
+  .brand .sub2 { color: rgba(255,255,255,0.68); font-size: 12px; margin: 8px 0 0; }
+
+  .hero-controls { display:flex; align-items:center; gap:8px; flex: none; flex-wrap: wrap; }
+  .lang-switch { display:flex; background: rgba(255,255,255,0.14); border:1px solid rgba(255,255,255,0.28); border-radius:10px; padding:3px; gap:2px; backdrop-filter: blur(4px); }
+  .lang-btn { border:none; background:transparent; color: rgba(255,255,255,0.85); font-size:12px; font-weight:600;
+    padding: 6px 11px; border-radius: 7px; cursor:pointer; transition: all .15s ease; }
+  .lang-btn:hover { color: #fff; background: rgba(255,255,255,0.12); }
+  .lang-btn.active { background: #fff; color: #1c5cab; }
+  .theme-toggle {
+    border: 1px solid rgba(255,255,255,0.28); background: rgba(255,255,255,0.14); color: #fff;
+    border-radius: 10px; padding: 8px 14px; font-size: 12.5px; cursor: pointer; backdrop-filter: blur(4px);
+    transition: all .15s ease; flex: none;
+  }
+  .theme-toggle:hover { background: rgba(255,255,255,0.24); transform: translateY(-1px); }
+
+  .wrap { max-width: 1440px; margin: 0 auto; padding: 22px 32px 0; }
+
+  .tiles { display:grid; grid-template-columns: repeat(7, 1fr); gap: 14px; margin-bottom: 20px; }
+  @media (max-width: 1300px){ .tiles{ grid-template-columns: repeat(4,1fr);} }
+  @media (max-width: 640px){ .tiles{ grid-template-columns: repeat(2,1fr);} }
+  .tile {
+    background: var(--surface-1); border: 1px solid var(--border); border-top: 3px solid var(--border); border-radius: 14px;
+    padding: 16px 18px; box-shadow: var(--shadow-sm); transition: box-shadow .15s ease, transform .15s ease;
+    cursor: pointer;
+  }
+  .tile:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+  .tile .icon-badge {
+    width:32px; height:32px; border-radius:9px; display:flex; align-items:center; justify-content:center;
+    margin-bottom: 10px; font-size: 16px;
+  }
+  .tile .label { font-size: 12px; color: var(--text-secondary); margin-bottom:4px; font-weight:500; }
+  .tile .value { font-size: 30px; font-weight: 700; font-variant-numeric: proportional-nums; letter-spacing:-0.02em; }
+  .tile.total { border-top-color: var(--accent); }
+  .tile.total .icon-badge { background: var(--accent-soft); color: var(--accent); }
+  .tile.increase { border-top-color: var(--critical); }
+  .tile.increase .icon-badge { background: color-mix(in srgb, var(--critical) 18%, transparent); color: var(--critical); }
+  .tile.decrease { border-top-color: var(--warning); }
+  .tile.decrease .icon-badge { background: color-mix(in srgb, var(--warning) 22%, transparent); color: #9a6a00; }
+  .tile.unset { border-top-color: var(--serious); }
+  .tile.unset .icon-badge { background: color-mix(in srgb, var(--serious) 20%, transparent); color: var(--serious); }
+  .tile.mixed { border-top-color: var(--mixed); }
+  .tile.mixed .icon-badge { background: color-mix(in srgb, var(--mixed) 18%, transparent); color: var(--mixed); }
+  .tile.ok { border-top-color: var(--good); }
+  .tile.ok .icon-badge { background: color-mix(in srgb, var(--good) 18%, transparent); color: var(--good-text); }
+  .tile.nodata { border-top-color: var(--muted); }
+  .tile.nodata .icon-badge { background: var(--gridline); color: var(--muted); }
+  .tile.increase .value { color: var(--critical); }
+  .tile.decrease .value { color: #9a6a00; }
+  .tile.unset .value { color: var(--serious); }
+  .tile.mixed .value { color: var(--mixed); }
+  .tile.ok .value { color: var(--good-text); }
+
+  .panels { display:grid; grid-template-columns: 1.1fr 1.4fr; gap: 14px; margin-bottom: 20px; }
+  @media (max-width: 900px){ .panels{ grid-template-columns: 1fr; } }
+  .panel { background: var(--surface-1); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; box-shadow: var(--shadow-sm); }
+  .panel h2 { font-size: 13.5px; margin: 0 0 4px; font-weight: 600; }
+  .panel .hint { font-size: 11.5px; color: var(--muted); margin: 0 0 14px; }
+
+  .barrow { display:flex; align-items:center; gap:10px; margin: 9px 0; }
+  .barrow .name { width: 78px; font-size: 12px; color: var(--text-secondary); flex: none; text-align:right;}
+  .barrow .track { flex:1; background: var(--gridline); border-radius: 5px; height: 16px; position:relative; overflow:hidden;}
+  .barrow .fill { height:100%; border-radius: 5px; transition: width .4s ease; }
+  .barrow .count { width: 40px; font-size: 12px; color: var(--text-secondary); flex:none; font-variant-numeric: tabular-nums;}
+
+  .hbar-item { margin: 8px 0; cursor:pointer; }
+  .hbar-item .top-line { display:flex; justify-content:space-between; gap:10px; font-size:11.5px; color: var(--text-secondary); margin-bottom:3px; }
+  .hbar-item .top-line b { color: var(--text-primary); font-weight:600; }
+  .hbar-item .top-line .name-part { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .hbar-item .track { background: var(--gridline); border-radius:5px; height:11px; overflow:hidden; }
+  .hbar-item .fill { height:100%; border-radius:5px; background: var(--critical); transition: width .4s ease; }
+  .hbar-item:hover .fill { filter: brightness(1.08); }
+
+  /* --- searchable combobox --- */
+  .searchbox { position: relative; flex: 1 1 280px; min-width: 220px; }
+  .searchbox .field {
+    display:flex; align-items:center; gap:8px; background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 8px 12px; transition: border-color .15s ease, box-shadow .15s ease;
+  }
+  .searchbox .field:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .searchbox svg { flex:none; opacity:.5; }
+  .searchbox input { flex:1; border:none; background:transparent; outline:none; color: var(--text-primary); font-size: 13px; min-width:0; }
+  .searchbox input::placeholder { color: var(--muted); }
+  .searchbox .clear-btn { border:none; background:none; color: var(--muted); cursor:pointer; font-size:14px; padding:2px 4px; border-radius:6px; }
+  .searchbox .clear-btn:hover { background: var(--gridline); color: var(--text-primary); }
+  .dropdown-panel {
+    position:absolute; top: calc(100% + 6px); left:0; right:0; z-index: 20;
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: 12px;
+    box-shadow: var(--shadow-lg); max-height: 360px; overflow-y:auto; padding: 6px;
+  }
+  .dropdown-item { display:flex; align-items:center; gap:10px; padding: 9px 10px; border-radius: 8px; cursor:pointer; }
+  .dropdown-item:hover, .dropdown-item.active { background: var(--accent-soft); }
+  .dropdown-item .d-code { font-weight:700; font-size:12.5px; flex: none; width: 78px; }
+  .dropdown-item .d-name { font-size:12.5px; color: var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; }
+  .dropdown-empty { padding: 16px; text-align:center; color: var(--muted); font-size:12.5px; }
+
+  .toolbar { display:flex; gap:10px; flex-wrap:wrap; align-items:center;
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: 14px;
+    padding: 12px 14px; margin-bottom: 14px; box-shadow: var(--shadow-sm); position: relative; z-index: 5; }
+  .toolbar select {
+    background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px;
+    padding: 8px 10px; color: var(--text-primary); font-size: 13px;
+  }
+  .toolbar .count-label { font-size: 12px; color: var(--muted); margin-left:auto; white-space:nowrap;}
+  .toolbar button.csv {
+    border: 1px solid var(--border); background: var(--surface-2); color: var(--text-secondary);
+    border-radius: 10px; padding: 8px 14px; font-size: 12.5px; cursor:pointer; transition: all .15s ease;
+    display:flex; align-items:center; gap:6px;
+  }
+  .toolbar button.csv:hover { color: var(--text-primary); box-shadow: var(--shadow-sm); }
+
+  .table-wrap { background: var(--surface-1); border: 1px solid var(--border); border-radius: 14px;
+    overflow: auto; max-height: 68vh; box-shadow: var(--shadow-sm); }
+  table { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+  thead th { position: sticky; top:0; background: var(--surface-1); z-index: 1; text-align: left; padding: 10px 12px;
+    font-weight:600; color: var(--text-secondary); border-bottom: 1px solid var(--gridline); cursor: pointer;
+    white-space: nowrap; user-select:none; }
+  thead th:hover { color: var(--text-primary); }
+  thead th.sorted { color: var(--accent); }
+  thead th.sorted::after { content: attr(data-arrow); margin-left: 4px; color: var(--accent); }
+  tbody td { padding: 9px 12px; border-bottom: 1px solid var(--gridline); vertical-align: top; }
+  tbody tr { cursor: pointer; transition: background .1s ease; }
+  tbody tr:hover { background: var(--accent-soft); }
+  tbody tr.increase { box-shadow: inset 3px 0 0 var(--critical); }
+  tbody tr.decrease { box-shadow: inset 3px 0 0 var(--warning); }
+  tbody tr.unset { box-shadow: inset 3px 0 0 var(--serious); }
+  tbody tr.mixed { box-shadow: inset 3px 0 0 var(--mixed); }
+  tbody tr.ok { box-shadow: inset 3px 0 0 var(--good); }
+  tbody tr.nodata { box-shadow: inset 3px 0 0 var(--gridline); }
+  .num { text-align: right; font-variant-numeric: tabular-nums; white-space:nowrap; }
+  .code-link { font-weight: 700; white-space:nowrap; color: var(--accent); display:inline-flex; align-items:center; gap:4px; }
+  .code-link:hover { text-decoration: underline; }
+  .name-cell { max-width: 230px; }
+  .name-th { font-size: 12.5px; }
+  .name-en { font-size: 11px; color: var(--muted); }
+
+  .badge { display:inline-block; padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight:600;
+    border: 1px solid var(--border); white-space:nowrap; }
+  .badge.freq-high { background: color-mix(in srgb, var(--seq-650) 24%, transparent); color: var(--seq-650); }
+  .badge.freq-mid { background: color-mix(in srgb, var(--seq-450) 24%, transparent); color: var(--seq-450); }
+  .badge.freq-low { background: color-mix(in srgb, var(--seq-350) 24%, transparent); color: var(--seq-350); }
+  .badge.freq-rare { background: color-mix(in srgb, var(--seq-250) 38%, transparent); color: var(--text-secondary); }
+  .badge.freq-never { background: var(--gridline); color: var(--muted); }
+
+  .chip { display:inline-flex; align-items:center; gap:6px; padding: 3px 10px 3px 8px; border-radius: 999px;
+    font-size: 11.5px; font-weight:600; white-space:nowrap; }
+  .chip .cdot { width:7px; height:7px; border-radius:50%; flex:none; }
+  .chip.g-electrical { background: color-mix(in srgb, var(--cat-1) 16%, transparent); color: var(--cat-1); }
+  .chip.g-electrical .cdot { background: var(--cat-1); }
+  .chip.g-mechanical { background: color-mix(in srgb, var(--cat-2) 16%, transparent); color: var(--cat-2); }
+  .chip.g-mechanical .cdot { background: var(--cat-2); }
+  .chip.g-pneumatic { background: color-mix(in srgb, var(--cat-3) 16%, transparent); color: var(--cat-3); }
+  .chip.g-pneumatic .cdot { background: var(--cat-3); }
+  .chip.g-supplies { background: color-mix(in srgb, var(--cat-4) 20%, transparent); color: #8a6400; }
+  .chip.g-supplies .cdot { background: var(--cat-4); }
+  .chip.g-lubrication { background: color-mix(in srgb, var(--cat-5) 18%, transparent); color: var(--cat-5); }
+  .chip.g-lubrication .cdot { background: var(--cat-5); }
+  .chip.g-other { background: var(--gridline); color: var(--muted); }
+  .chip.g-other .cdot { background: var(--muted); }
+
+  .delta { font-weight:700; font-variant-numeric: tabular-nums; }
+  .delta.up { color: var(--critical); }
+  .delta.down { color: #9a6a00; }
+  .delta.flat { color: var(--muted); }
+
+  .note-tag { display:inline-flex; align-items:center; gap:6px; font-size: 11.5px; font-weight:600; white-space:nowrap;
+    padding: 3px 10px; border-radius: 999px; }
+  .note-tag.increase { background: color-mix(in srgb, var(--critical) 14%, transparent); color: var(--critical); }
+  .note-tag.decrease { background: color-mix(in srgb, var(--warning) 20%, transparent); color: #9a6a00; }
+  .note-tag.unset { background: color-mix(in srgb, var(--serious) 16%, transparent); color: var(--serious); }
+  .note-tag.mixed { background: color-mix(in srgb, var(--mixed) 16%, transparent); color: var(--mixed); }
+  .note-tag.ok { background: color-mix(in srgb, var(--good) 14%, transparent); color: var(--good-text); }
+  .note-tag.nodata { background: var(--gridline); color: var(--muted); }
+
+  footer.methodology { margin-top: 18px; font-size: 11.5px; color: var(--muted); line-height:1.6;
+    background: var(--surface-1); border:1px solid var(--border); border-radius:14px; padding: 16px 20px; }
+  footer.methodology b { color: var(--text-secondary); }
+
+  /* --- detail drawer --- */
+  .overlay { position: fixed; inset:0; background: rgba(0,0,0,0.35); backdrop-filter: blur(2px);
+    opacity:0; pointer-events:none; transition: opacity .2s ease; z-index: 50; }
+  .overlay.open { opacity:1; pointer-events:auto; }
+  .drawer { position: fixed; top:0; right:0; height:100vh; width: min(520px, 92vw); background: var(--surface-1);
+    box-shadow: var(--shadow-lg); transform: translateX(100%); transition: transform .25s ease; z-index: 51;
+    display:flex; flex-direction:column; }
+  .drawer.open { transform: translateX(0); }
+  .drawer-head { padding: 20px 22px 16px; border-bottom: 1px solid var(--border); }
+  .drawer-head .top-row { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+  .drawer-head h3 { margin:0 0 4px; font-size: 17px; font-weight:700; }
+  .drawer-head .code { color: var(--accent); font-weight:700; font-size:12.5px; }
+  .drawer-close { border:none; background: var(--surface-2); color: var(--text-secondary); width:30px; height:30px;
+    border-radius: 9px; cursor:pointer; font-size:15px; flex:none; }
+  .drawer-close:hover { color: var(--text-primary); }
+  .drawer-body { padding: 18px 22px; overflow-y:auto; flex:1; }
+  .drawer-grid { display:grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px; }
+  .drawer-stat { background: var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:10px 12px; }
+  .drawer-stat .k { font-size:11px; color: var(--muted); margin-bottom:3px; }
+  .drawer-stat .v { font-size:15px; font-weight:700; }
+  .drawer-reco { border-radius: 12px; padding: 14px 16px; margin-bottom: 18px; font-size:13px; line-height:1.6; }
+  .drawer-reco.increase { background: color-mix(in srgb, var(--critical) 10%, transparent); border:1px solid color-mix(in srgb, var(--critical) 30%, transparent); }
+  .drawer-reco.decrease { background: color-mix(in srgb, var(--warning) 14%, transparent); border:1px solid color-mix(in srgb, var(--warning) 35%, transparent); }
+  .drawer-reco.unset { background: color-mix(in srgb, var(--serious) 10%, transparent); border:1px solid color-mix(in srgb, var(--serious) 30%, transparent); }
+  .drawer-reco.mixed { background: color-mix(in srgb, var(--mixed) 10%, transparent); border:1px solid color-mix(in srgb, var(--mixed) 30%, transparent); }
+  .drawer-reco.ok { background: color-mix(in srgb, var(--good) 8%, transparent); border:1px solid color-mix(in srgb, var(--good) 25%, transparent); }
+  .drawer-reco.nodata { background: var(--surface-2); border:1px solid var(--border); }
+  .pdf-link { display:inline-flex; align-items:center; gap:7px; background: var(--accent); color:#fff; text-decoration:none;
+    padding: 9px 16px; border-radius: 10px; font-size:13px; font-weight:600; margin-bottom:18px; transition: opacity .15s ease; }
+  .pdf-link:hover { opacity:.88; }
+
+  .year-chart-wrap { background: var(--surface-2); border:1px solid var(--border); border-radius:12px; padding:14px 16px 10px; margin-bottom:18px; }
+  .year-chart-wrap h4 { margin:0 0 3px; }
+  .year-chart-wrap .hint { margin: 0 0 14px; }
+  .year-chart { display:flex; align-items:flex-end; gap:8px; height:140px; position:relative; }
+  .year-avg-line { position:absolute; left:0; right:0; border-top:2px dashed var(--accent); z-index:0; }
+  .year-flat-line { position:absolute; left:0; right:0; border-top:2px dotted var(--muted); z-index:0; }
+  .year-avg-tag { position:absolute; right:0; top:-9px; font-size:10px; color: var(--muted); background: var(--surface-2); padding:0 4px; }
+  .ybar-col { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; position:relative; z-index:1; min-width: 0; }
+  .ybar-value { font-size:11px; font-weight:700; color: var(--text-secondary); margin-bottom:3px; white-space:nowrap; }
+  .ybar-track { width:100%; max-width:34px; height:100%; display:flex; align-items:flex-end; }
+  .ybar-fill { width:100%; background: var(--accent); border-radius:4px 4px 0 0; min-height:2px; transition: height .5s ease; }
+  .ybar-col.current .ybar-fill { background: var(--seq-650); }
+  .ybar-label { font-size:10px; color: var(--muted); margin-top:6px; white-space:nowrap; }
+  .year-chart-legend { display:flex; align-items:center; gap:14px; font-size:11px; color: var(--muted); margin-top:8px; }
+  .year-chart-legend .dot { width:8px; height:8px; border-radius:2px; display:inline-block; margin-right:5px; vertical-align:-1px; }
+  .drawer-body h4 { font-size:12.5px; margin: 0 0 10px; color: var(--text-secondary); }
+  .hist-table { width:100%; border-collapse:collapse; font-size:12px; }
+  .hist-table th { text-align:left; padding:6px 8px; color:var(--muted); font-weight:500; border-bottom:1px solid var(--gridline); }
+  .hist-table td { padding:7px 8px; border-bottom:1px solid var(--gridline); }
+  .hist-table .num { text-align:right; font-variant-numeric: tabular-nums; }
+  .hist-badge { font-size:10.5px; font-weight:700; padding:2px 7px; border-radius:6px; }
+  .hist-badge.REC { background: color-mix(in srgb, var(--good) 20%, transparent); color: var(--good-text); }
+  .hist-badge.ISS { background: color-mix(in srgb, var(--accent) 20%, transparent); color: var(--accent); }
+  .no-history { color: var(--muted); font-size:12.5px; padding: 12px 0; }
+  .hist-badge.MANUAL { background: color-mix(in srgb, var(--serious) 20%, transparent); color: var(--serious); }
+  .manual-flag { font-size:10px; margin-left:5px; opacity:.75; }
+
+  /* --- add record form --- */
+  .add-record { background: var(--surface-2); border:1px dashed var(--border); border-radius:12px; padding:14px 16px; margin-bottom:18px; }
+  .add-record h4 { font-size:12.5px; margin:0 0 10px; color: var(--text-secondary); }
+  .add-record-grid { display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:10px; }
+  .add-record label { display:block; font-size:10.5px; color: var(--muted); margin-bottom:3px; }
+  .add-record input, .add-record select {
+    width:100%; background: var(--surface-1); border:1px solid var(--border); border-radius:8px;
+    padding:7px 9px; color: var(--text-primary); font-size:12.5px;
+  }
+  .add-record button {
+    width:100%; background: var(--accent); color:#fff; border:none; border-radius:9px;
+    padding:9px; font-size:13px; font-weight:600; cursor:pointer; transition: opacity .15s ease;
+  }
+  .add-record button:hover { opacity:.88; }
+  .add-record-error { color: var(--critical); font-size:11.5px; margin: -4px 0 8px; }
+
+  /* --- pagination --- */
+  .pagination { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
+    padding: 12px 4px 0; font-size:12.5px; color: var(--text-secondary); }
+  .pagination .pager-btns { display:flex; align-items:center; gap:8px; }
+  .pagination button {
+    border:1px solid var(--border); background: var(--surface-1); color: var(--text-secondary);
+    border-radius:8px; padding:6px 13px; font-size:12.5px; cursor:pointer; transition: all .15s ease;
+  }
+  .pagination button:hover:not(:disabled) { color: var(--text-primary); box-shadow: var(--shadow-sm); }
+  .pagination button:disabled { opacity:.4; cursor:not-allowed; }
+
+  /* --- manual banner + manage button --- */
+  .manual-banner { display:flex; align-items:center; gap:8px; background: color-mix(in srgb, var(--serious) 10%, transparent);
+    border:1px solid color-mix(in srgb, var(--serious) 28%, transparent); color: var(--serious);
+    border-radius:10px; padding:9px 14px; font-size:12.5px; font-weight:600; margin-bottom:12px; }
+  .manage-btn {
+    border: 1px solid var(--border); background: var(--surface-2); color: var(--text-secondary);
+    border-radius: 10px; padding: 8px 14px; font-size: 12.5px; cursor:pointer; transition: all .15s ease;
+  }
+  .manage-btn:hover { color: var(--text-primary); box-shadow: var(--shadow-sm); }
+
+  .manage-row { display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--gridline); font-size:12.5px; }
+  .manage-row .m-code { font-weight:700; width:80px; flex:none; }
+  .manage-row .m-mid { flex:1; color: var(--text-secondary); }
+  .manage-row .m-del {
+    border:1px solid var(--border); background: var(--surface-2); color: var(--critical);
+    border-radius:7px; padding:5px 10px; font-size:11.5px; cursor:pointer; flex:none;
+  }
+  .manage-row .m-del:hover { background: color-mix(in srgb, var(--critical) 12%, transparent); }
+  .manage-actions { display:flex; gap:8px; margin-top:16px; flex-wrap:wrap; }
+  .manage-actions button {
+    flex:1; border:1px solid var(--border); background: var(--surface-2); color: var(--text-secondary);
+    border-radius:9px; padding:9px; font-size:12.5px; cursor:pointer; transition: all .15s ease;
+  }
+  .manage-actions button.danger { color: var(--critical); }
+  .manage-actions button:hover { color: var(--text-primary); box-shadow: var(--shadow-sm); }
+</style>
+</head>
+<body>
+  <div class="viz-root">
+    <div class="top-accent"></div>
+    <div class="hero">
+      <div class="hero-inner">
+        <div class="brand">
+          <div class="eyebrow"><span class="dot"></span><span data-i="eyebrow"></span></div>
+          <h1 data-i="title">EMERALD NONWOVENS INTERNATIONAL</h1>
+          <p class="sub" data-i="subtitle"></p>
+          <p class="sub2" id="last-updated"></p>
+        </div>
+        <div class="hero-controls">
+          <div class="lang-switch" id="lang-switch">
+            <button class="lang-btn" data-lang="zh">中文</button>
+            <button class="lang-btn" data-lang="en">EN</button>
+            <button class="lang-btn" data-lang="th">ไทย</button>
+          </div>
+          <button class="theme-toggle" id="theme-toggle">🌓 <span data-i="themeToggle"></span></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="wrap">
+      <div class="tiles">
+        <div class="tile total" data-reco="">
+          <div class="icon-badge">📦</div>
+          <div class="label" data-i="tileTotal"></div>
+          <div class="value" id="tile-total">-</div>
+        </div>
+        <div class="tile increase" data-reco="increase">
+          <div class="icon-badge">⚠️</div>
+          <div class="label" data-i="tileIncrease"></div>
+          <div class="value" id="tile-increase">-</div>
+        </div>
+        <div class="tile decrease" data-reco="decrease">
+          <div class="icon-badge">📉</div>
+          <div class="label" data-i="tileDecrease"></div>
+          <div class="value" id="tile-decrease">-</div>
+        </div>
+        <div class="tile unset" data-reco="unset">
+          <div class="icon-badge">❓</div>
+          <div class="label" data-i="tileUnset"></div>
+          <div class="value" id="tile-unset">-</div>
+        </div>
+        <div class="tile mixed" data-reco="mixed">
+          <div class="icon-badge">🔀</div>
+          <div class="label" data-i="tileMixed"></div>
+          <div class="value" id="tile-mixed">-</div>
+        </div>
+        <div class="tile ok" data-reco="ok">
+          <div class="icon-badge">✅</div>
+          <div class="label" data-i="tileOk"></div>
+          <div class="value" id="tile-ok">-</div>
+        </div>
+        <div class="tile nodata" data-reco="nodata">
+          <div class="icon-badge">⏳</div>
+          <div class="label" data-i="tileNodata"></div>
+          <div class="value" id="tile-nodata">-</div>
+        </div>
+      </div>
+
+      <div class="panels">
+        <div class="panel">
+          <h2 data-i="freqPanelTitle"></h2>
+          <p class="hint" data-i="freqPanelHint"></p>
+          <div id="freq-chart"></div>
+        </div>
+        <div class="panel">
+          <h2 data-i="topPanelTitle"></h2>
+          <p class="hint" data-i="topPanelHint"></p>
+          <div id="top-increase-chart"></div>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <div class="searchbox" id="searchbox">
+          <div class="field">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="search" autocomplete="off">
+            <button class="clear-btn" id="clear-search" style="display:none;">✕</button>
+          </div>
+          <div class="dropdown-panel" id="dropdown-panel" style="display:none;"></div>
+        </div>
+        <select id="filter-group"></select>
+        <select id="filter-freq"></select>
+        <select id="filter-reco"></select>
+        <button class="csv" id="export-csv">⬇ <span data-i="csvButton"></span></button>
+        <button class="manage-btn" id="manage-btn"></button>
+        <span class="count-label" id="row-count"></span>
+      </div>
+
+      <div id="manual-banner-slot"></div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr id="table-head">
+              <th data-key="code" data-i="thCode"></th>
+              <th data-key="name_th" data-i="thName"></th>
+              <th data-key="group" data-i="thGroup"></th>
+              <th data-key="location" data-i="thLocation"></th>
+              <th data-key="vendor" data-i="thVendor"></th>
+              <th data-key="freq_class" data-i="thFreq"></th>
+              <th data-key="issues_per_year" class="num" data-i="thIssuesPerYear"></th>
+              <th data-key="usage_per_year" class="num" data-i="thUsageQty"></th>
+              <th data-key="current_min" class="num" data-i="thCurMin"></th>
+              <th data-key="current_max" class="num" data-i="thCurMax"></th>
+              <th data-key="reco_min" class="num" data-i="thRecoMin"></th>
+              <th data-key="reco_max" class="num" data-i="thRecoMax"></th>
+              <th data-key="delta" class="num" data-i="thDelta"></th>
+              <th data-key="reco_note" data-i="thRecoNote"></th>
+            </tr>
+          </thead>
+          <tbody id="table-body"></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="pagination"></div>
+
+      <footer class="methodology">
+        <b data-i="methodTitle"></b> <span data-i="methodBody"></span>
+      </footer>
+    </div>
+  </div>
+
+  <div class="overlay" id="overlay"></div>
+  <div class="drawer" id="drawer">
+    <div class="drawer-head">
+      <div class="top-row">
+        <div>
+          <div class="code" id="drawer-code"></div>
+          <h3 id="drawer-name"></h3>
+        </div>
+        <button class="drawer-close" id="drawer-close">✕</button>
+      </div>
+    </div>
+    <div class="drawer-body" id="drawer-body"></div>
+  </div>
+
+<script>
+const DATA = __DATA_JSON__;
+
+const I18N = {
+  zh: {
+    eyebrow: "設備維修備料預測系統",
+    title: "EMERALD NONWOVENS INTERNATIONAL — 設備零件更換備料預測",
+    subtitle: "當設備故障需要更換零件時，本系統依 426 項備品的歷史更換(領用)紀錄，換算實際使用頻率並預測所需的安全庫存(Min)／最高庫存(Max)，避免常用零件缺料延誤維修，也讓低頻零件不再囤積過多庫存。",
+    lastUpdated: (a,b) => `資料涵蓋期間：${a} ｜ 分析基準日：${b}`,
+    themeToggle: "切換深色模式",
+    tileTotal: "零件總數", tileIncrease: "建議提高備料", tileDecrease: "建議降低備料",
+    tileUnset: "從未設定備料", tileMixed: "建議調整範圍", tileOk: "現行設定合理", tileNodata: "資料不足待觀察",
+    freqPanelTitle: "使用頻率分布", freqPanelHint: "依每年平均更換(領用)次數分級，顏色深淺代表故障更換頻率高低",
+    topPanelTitle: "最需提高備料 Top 15", topPanelHint: "建議安全庫存(Min) 與目前設定差距最大的零件，點擊可查看歷史更換紀錄",
+    topPanelEmpty: "目前沒有需要提高備料的品項",
+    searchPlaceholder: "搜尋零件代碼／名稱／廠商／位置...",
+    dropdownEmpty: "找不到符合的零件",
+    filterGroupAll: "全部群組", filterFreqAll: "全部使用頻率", filterRecoAll: "全部建議",
+    csvButton: "匯出 Excel", csvFilename: "設備零件備料預測.xls",
+    rowCount: (a,b) => `顯示 ${a} / ${b} 項`,
+    thCode: "代碼", thName: "品名 / Model", thGroup: "群組", thLocation: "位置", thVendor: "廠商",
+    thFreq: "故障更換頻率", thIssuesPerYear: "年更換次數(次)", thUsageQty: "加權移動平均用量(個)", thCurMin: "目前 Min", thCurMax: "目前 Max",
+    thRecoMin: "建議 Min", thRecoMax: "建議 Max", thDelta: "差異", thRecoNote: "建議說明",
+    methodTitle: "計算方法：",
+    methodBody: "「年領用數量」改用「加權移動平均法」(Weighted Moving Average) 計算，不是把全部歷史平均在一起：只取最近 3 個已完整結束的年度，依新舊給予 1、2、3 的權重（最近一年權重最高=3，前年=2，大前年=1，中間沒有領用的年份也算 0，不會被忽略，超過 3 年前的資料則完全不計入），公式為 (3×最近年+2×次年+1×前年) ÷ (3+2+1)。這樣使用量上升或下降的趨勢會直接反映在建議值上，比單純平均更貼近近況。建議安全庫存(Min) = ⌈加權移動平均日用量 × 平均補貨週期天數 × 1.3 波動緩衝⌉，補貨週期取「相鄰兩次入庫的平均間隔天數」(若入庫紀錄不足則改用領用間隔)；建議最高庫存(Max) = 建議 Min + 平均單次領用/入庫數量。點開零件側欄可以同時看到「加權移動平均用量」與「歷史簡單平均」兩個數字，以及逐年長條圖，方便對照差異。更換次數少於 2 次或觀測期不足半年的品項，因歷史資料不足以判斷趨勢，維持原設定並標示「資料不足待觀察」。點擊任一列可查看該零件完整的歷史更換紀錄，並可開啟原始 STOCK CARD PDF 單據。本頁面所有數據皆於本機端計算與呈現，未上傳至任何外部伺服器。",
+    freqLabel: {"高頻":"高頻","中頻":"中頻","低頻":"低頻","極少使用":"極少使用","從未領用":"從未領用"},
+    recoLabel: {increase:"⚠️ 建議提高", decrease:"📉 建議降低", mixed:"🔀 建議調整範圍", unset:"❓ 從未設定備料", ok:"✅ 現行設定合理", nodata:"⏳ 資料不足待觀察"},
+    recoShort: {increase:"建議提高", decrease:"建議降低", mixed:"建議調整", unset:"從未設定", ok:"現行合理", nodata:"資料不足"},
+    groupLabel: {ELECTRICAL:"電氣", MECHANICAL:"機械", PNEUMATIC:"氣動", SUPPLIES:"耗材", LUBRICATION:"潤滑"},
+    noteText: (it) => {
+      const minPart = `Min ${it.current_min}→${it.reco_min}`;
+      const maxPart = (it.current_max!=null) ? `Max ${it.current_max}→${it.reco_max}` : null;
+      if (it.recoType==='increase' || it.recoType==='decrease'){
+        const label = it.recoType==='increase' ? '建議提高：' : '建議降低：';
+        const parts = [];
+        if (it.recoType==='increase' ? it.minDelta>=1 : it.minDelta<=-1) parts.push(minPart);
+        if (maxPart && (it.recoType==='increase' ? it.maxDelta>=1 : it.maxDelta<=-1)) parts.push(maxPart);
+        return label + parts.join('、');
+      }
+      if (it.recoType==='mixed') return `建議調整範圍：${minPart}${maxPart?'、'+maxPart:''}`;
+      if (it.recoType==='unset') return `尚未設定安全庫存，建議新增 Min ${it.reco_min} / Max ${it.reco_max}`;
+      if (it.recoType==='ok') return `現行設定合理`;
+      return `歷史資料不足，維持現行設定`;
+    },
+    drawerGroupLoc: "群組 / 位置", drawerVendor: "廠商", drawerFreq: "故障更換頻率", drawerIssues: "年更換次數(次)",
+    drawerUsageQty: "加權移動平均用量(個/年)", drawerUsageFlat: "歷史簡單平均(個/年)",
+    yearlyChartTitle: "📊 歷年領用數量",
+    yearlyChartHint: "長條為每年實際領用數量；藍色虛線＝加權移動平均預測用量(近3年權重1/2/3，用來計算建議值)，灰色點線＝不分年份的歷史簡單平均",
+    yearlyAvgLabel: (w,f) => `加權移動平均：${w} 個/年（驅動建議值）　·　簡單平均：${f} 個/年`,
+    yearPartialTag: "（至今）",
+    drawerCurMinMax: "目前 Min / Max", drawerRecoMinMax: "建議 Min / Max",
+    pdfLinkText: "開啟原始 STOCK CARD PDF 單據",
+    historyTitle: (n) => `歷史更換紀錄（共 ${n} 筆，最新在上）`,
+    noHistory: "此零件尚無歷史更換紀錄",
+    histDate: "日期", histAction: "動作", histQty: "數量", histBalance: "結存", histDoc: "單據編號",
+    histRec: "入庫", histIss: "更換領用",
+    manualTagLabel: "手動新增",
+    addRecordTitle: "新增歷史紀錄",
+    addRecordDate: "日期", addRecordType: "類型", addRecordQty: "數量", addRecordDoc: "單據編號",
+    addRecordDocPlaceholder: "選填", addRecordSubmit: "新增紀錄",
+    addRecordInvalid: "請輸入大於 0 的數量",
+    manualBanner: (n) => `已手動新增 ${n} 筆紀錄，已計入下方預測計算`,
+    manageBtn: (n) => `手動新增資料管理 (${n})`,
+    manageTitle: "手動新增資料管理",
+    manageEmpty: "尚未手動新增任何資料",
+    manageDeleteConfirm: "確定要刪除這筆手動新增的紀錄嗎？",
+    manageClearAllBtn: "清除全部手動新增資料",
+    manageClearAllConfirm: "確定要清除所有手動新增的紀錄嗎？此動作無法復原。",
+    manageExportBtn: "匯出手動新增紀錄 CSV",
+    manageExportFilename: "手動新增紀錄.csv",
+    manageColCode: "代碼", manageColDate: "日期", manageColType: "類型", manageColQty: "數量", manageColDoc: "單據編號", manageColAction: "操作",
+    manageDeleteAction: "刪除",
+    pagePrev: "上一頁", pageNext: "下一頁",
+    pageInfo: (p,t) => `第 ${p} / ${t} 頁`,
+    rowCountRange: (start,end,total) => total===0 ? `顯示 0 / 0 項` : `顯示第 ${start}-${end} 項，共 ${total} 項`,
+    managePickPlaceholder: "搜尋並選擇要新增紀錄的零件...",
+    manageNoItemSelected: "請先搜尋並選擇一個零件",
+    manageSelectedPrefix: "已選擇零件：",
+    manageChangeItem: "更換",
+    manageAddSectionTitle: "➕ 新增歷史紀錄",
+  },
+  en: {
+    eyebrow: "Equipment Failure Parts Prediction",
+    title: "EMERALD NONWOVENS INTERNATIONAL — Spare Parts Replacement Forecast",
+    subtitle: "When equipment breaks down and parts need replacing, this system uses the historical replacement (issue) records of 426 spare parts to derive actual usage frequency and forecast the safety stock (Min) / maximum stock (Max) needed — preventing stockouts on frequently-used parts while trimming excess stock on rarely-used ones.",
+    lastUpdated: (a,b) => `Data range: ${a} | Analysis date: ${b}`,
+    themeToggle: "Toggle dark mode",
+    tileTotal: "Total parts", tileIncrease: "Suggest increase", tileDecrease: "Suggest decrease",
+    tileUnset: "Never configured", tileMixed: "Range needs adjusting", tileOk: "Currently reasonable", tileNodata: "Insufficient data",
+    freqPanelTitle: "Usage frequency distribution", freqPanelHint: "Tiered by average yearly replacements; darker = more frequent failures/replacements",
+    topPanelTitle: "Top 15 needing more stock", topPanelHint: "Parts with the largest gap between recommended and current Min. Click to view history",
+    topPanelEmpty: "No parts currently need increased stock",
+    searchPlaceholder: "Search part code / name / vendor / location...",
+    dropdownEmpty: "No matching parts found",
+    filterGroupAll: "All groups", filterFreqAll: "All frequencies", filterRecoAll: "All recommendations",
+    csvButton: "Export Excel", csvFilename: "spare_parts_forecast.xls",
+    rowCount: (a,b) => `Showing ${a} / ${b} items`,
+    thCode: "Code", thName: "Name / Model", thGroup: "Group", thLocation: "Location", thVendor: "Vendor",
+    thFreq: "Failure frequency", thIssuesPerYear: "Times/yr (visits)", thUsageQty: "WMA qty/yr (3yr)", thCurMin: "Current Min", thCurMax: "Current Max",
+    thRecoMin: "Suggested Min", thRecoMax: "Suggested Max", thDelta: "Delta", thRecoNote: "Recommendation",
+    methodTitle: "Methodology:",
+    methodBody: "\"WMA qty/yr\" uses a Weighted Moving Average, not a flat lifetime average: only the last 3 completed calendar years are used, weighted 1, 2, 3 from oldest to newest (most recent year counts most; quiet years with zero usage still count as zero rather than being skipped; anything older than 3 years is dropped entirely) — weighted average = (3×latest + 2×prior + 1×year before) ÷ (3+2+1). A rising or falling trend moves the forecast directly instead of being smoothed away. Suggested Min = ceil(WMA daily usage × avg replenishment-cycle days × 1.3 variability buffer); cycle days = mean interval between consecutive receipts (falling back to the issue interval when receipts are sparse); suggested Max = suggested Min + the average quantity per issue/receipt. Open any part's drawer to see both the WMA rate and the simple lifetime average side by side, plus a year-by-year bar chart. Parts with fewer than 2 issues or under 6 months of history are flagged \"insufficient data\" and kept at their current setting. Click any row to see the full replacement history and open the original STOCK CARD PDF. All figures are computed and rendered locally — nothing is uploaded to any external server.",
+    freqLabel: {"高頻":"High","中頻":"Medium","低頻":"Low","極少使用":"Rare","從未領用":"Never used"},
+    recoLabel: {increase:"⚠️ Suggest increase", decrease:"📉 Suggest decrease", mixed:"🔀 Adjust the range", unset:"❓ Never configured", ok:"✅ Currently reasonable", nodata:"⏳ Insufficient data"},
+    recoShort: {increase:"Increase", decrease:"Decrease", mixed:"Adjust", unset:"Unset", ok:"OK", nodata:"No data"},
+    groupLabel: {ELECTRICAL:"Electrical", MECHANICAL:"Mechanical", PNEUMATIC:"Pneumatic", SUPPLIES:"Supplies", LUBRICATION:"Lubrication"},
+    noteText: (it) => {
+      const minPart = `Min ${it.current_min}→${it.reco_min}`;
+      const maxPart = (it.current_max!=null) ? `Max ${it.current_max}→${it.reco_max}` : null;
+      if (it.recoType==='increase' || it.recoType==='decrease'){
+        const label = it.recoType==='increase' ? 'Increase: ' : 'Decrease: ';
+        const parts = [];
+        if (it.recoType==='increase' ? it.minDelta>=1 : it.minDelta<=-1) parts.push(minPart);
+        if (maxPart && (it.recoType==='increase' ? it.maxDelta>=1 : it.maxDelta<=-1)) parts.push(maxPart);
+        return label + parts.join(', ');
+      }
+      if (it.recoType==='mixed') return `Adjust range: ${minPart}${maxPart?', '+maxPart:''}`;
+      if (it.recoType==='unset') return `Not configured — suggest Min ${it.reco_min} / Max ${it.reco_max}`;
+      if (it.recoType==='ok') return `Current setting is reasonable`;
+      return `Insufficient history — keep current setting`;
+    },
+    drawerGroupLoc: "Group / Location", drawerVendor: "Vendor", drawerFreq: "Failure frequency", drawerIssues: "Times/yr (visits)",
+    drawerUsageQty: "WMA qty/yr (3yr)", drawerUsageFlat: "Simple lifetime average/yr",
+    yearlyChartTitle: "📊 Yearly quantity used",
+    yearlyChartHint: "Bars = actual quantity issued each year. Blue dashed line = weighted moving average forecast (last 3 yrs, weights 1/2/3, drives the recommendation); gray dotted line = simple lifetime average across all years",
+    yearlyAvgLabel: (w,f) => `WMA (3yr): ${w}/yr — drives the recommendation　·　Simple average: ${f}/yr`,
+    yearPartialTag: " (YTD)",
+    drawerCurMinMax: "Current Min / Max", drawerRecoMinMax: "Suggested Min / Max",
+    pdfLinkText: "Open original STOCK CARD PDF",
+    historyTitle: (n) => `Replacement history (${n} records, newest first)`,
+    noHistory: "No replacement history for this part yet",
+    histDate: "Date", histAction: "Action", histQty: "Qty", histBalance: "Balance", histDoc: "Doc No.",
+    histRec: "Received", histIss: "Issued",
+    manualTagLabel: "Manually added",
+    addRecordTitle: "Add a history record",
+    addRecordDate: "Date", addRecordType: "Type", addRecordQty: "Quantity", addRecordDoc: "Document No.",
+    addRecordDocPlaceholder: "Optional", addRecordSubmit: "Add record",
+    addRecordInvalid: "Please enter a quantity greater than 0",
+    manualBanner: (n) => `${n} manually-added record(s) are included in the forecast below`,
+    manageBtn: (n) => `Manual data (${n})`,
+    manageTitle: "Manual data management",
+    manageEmpty: "No manually-added records yet",
+    manageDeleteConfirm: "Delete this manually-added record?",
+    manageClearAllBtn: "Clear all manually-added records",
+    manageClearAllConfirm: "This will permanently delete every manually-added record. Continue?",
+    manageExportBtn: "Export manual records CSV",
+    manageExportFilename: "manual_records.csv",
+    manageColCode: "Code", manageColDate: "Date", manageColType: "Type", manageColQty: "Qty", manageColDoc: "Doc No.", manageColAction: "Action",
+    manageDeleteAction: "Delete",
+    pagePrev: "Prev", pageNext: "Next",
+    pageInfo: (p,t) => `Page ${p} / ${t}`,
+    rowCountRange: (start,end,total) => total===0 ? `Showing 0 / 0 items` : `Showing ${start}-${end} of ${total} items`,
+    managePickPlaceholder: "Search and select a part to add a record for...",
+    manageNoItemSelected: "Please search and select a part first",
+    manageSelectedPrefix: "Selected part: ",
+    manageChangeItem: "Change",
+    manageAddSectionTitle: "➕ Add a history record",
+  },
+  th: {
+    eyebrow: "ระบบพยากรณ์อะไหล่ซ่อมบำรุง",
+    title: "EMERALD NONWOVENS INTERNATIONAL — พยากรณ์อะไหล่สำหรับเปลี่ยนเมื่อเครื่องจักรเสีย",
+    subtitle: "เมื่อเครื่องจักรเสียและต้องเปลี่ยนอะไหล่ ระบบนี้ใช้ประวัติการเบิกจ่ายของอะไหล่ 426 รายการ คำนวณความถี่การใช้งานจริง และพยากรณ์ระดับ Safety Stock (Min) / Maximum Stock (Max) ที่เหมาะสม เพื่อป้องกันอะไหล่ที่ใช้บ่อยขาดสต๊อกจนซ่อมล่าช้า และลดการสำรองอะไหล่ที่ใช้น้อยเกินความจำเป็น",
+    lastUpdated: (a,b) => `ช่วงข้อมูล: ${a} | วันที่วิเคราะห์: ${b}`,
+    themeToggle: "สลับโหมดมืด",
+    tileTotal: "จำนวนอะไหล่ทั้งหมด", tileIncrease: "แนะนำเพิ่มสต๊อก", tileDecrease: "แนะนำลดสต๊อก",
+    tileUnset: "ยังไม่ได้ตั้งค่า", tileMixed: "ควรปรับช่วง Min-Max", tileOk: "การตั้งค่าเหมาะสมแล้ว", tileNodata: "ข้อมูลไม่เพียงพอ",
+    freqPanelTitle: "การกระจายความถี่การใช้งาน", freqPanelHint: "จัดระดับตามจำนวนครั้งการเบิกเฉลี่ยต่อปี สีเข้มแสดงความถี่การเสีย/เปลี่ยนที่สูงกว่า",
+    topPanelTitle: "Top 15 ที่ควรเพิ่มสต๊อกมากที่สุด", topPanelHint: "อะไหล่ที่ค่า Min แนะนำห่างจากค่าปัจจุบันมากที่สุด คลิกเพื่อดูประวัติ",
+    topPanelEmpty: "ขณะนี้ไม่มีรายการที่ต้องเพิ่มสต๊อก",
+    searchPlaceholder: "ค้นหารหัส / ชื่อ / ผู้ขาย / ตำแหน่งอะไหล่...",
+    dropdownEmpty: "ไม่พบอะไหล่ที่ตรงกัน",
+    filterGroupAll: "ทุกกลุ่ม", filterFreqAll: "ทุกความถี่การใช้งาน", filterRecoAll: "ทุกคำแนะนำ",
+    csvButton: "ส่งออก Excel", csvFilename: "พยากรณ์อะไหล่.xls",
+    rowCount: (a,b) => `แสดง ${a} / ${b} รายการ`,
+    thCode: "รหัส", thName: "ชื่อ / Model", thGroup: "กลุ่ม", thLocation: "ตำแหน่ง", thVendor: "ผู้ขาย",
+    thFreq: "ความถี่การเสีย/เปลี่ยน", thIssuesPerYear: "จำนวนครั้ง/ปี", thUsageQty: "WMA 3 ปี (ชิ้น/ปี)", thCurMin: "Min ปัจจุบัน", thCurMax: "Max ปัจจุบัน",
+    thRecoMin: "Min แนะนำ", thRecoMax: "Max แนะนำ", thDelta: "ผลต่าง", thRecoNote: "คำแนะนำ",
+    methodTitle: "วิธีคำนวณ:",
+    methodBody: "\"WMA 3 ปี\" ใช้วิธีค่าเฉลี่ยเคลื่อนที่ถ่วงน้ำหนัก (Weighted Moving Average) แทนค่าเฉลี่ยรวมทุกปี: นำเฉพาะ 3 ปีปฏิทินล่าสุดที่จบสมบูรณ์แล้วมาคำนวณ โดยให้น้ำหนัก 1, 2, 3 จากปีเก่าไปปีใหม่ (ปีล่าสุดมีน้ำหนักมากที่สุด=3, ปีที่ไม่มีการเบิกนับเป็น 0 ไม่ถูกข้าม, ข้อมูลเก่ากว่า 3 ปีจะไม่ถูกนำมาคิดเลย) สูตร = (3×ปีล่าสุด + 2×ปีก่อนหน้า + 1×ปีก่อนนั้น) ÷ (3+2+1) ทำให้แนวโน้มการใช้งานที่เพิ่มขึ้นหรือลดลงส่งผลต่อคำแนะนำโดยตรง Min แนะนำ = ⌈อัตราการใช้ตาม WMA ต่อวัน × จำนวนวันรอบเติมสต๊อกเฉลี่ย × 1.3 (ค่าบัฟเฟอร์ความผันผวน)⌉ และ Max แนะนำ = Min แนะนำ + ปริมาณเฉลี่ยต่อครั้งของการเบิก/รับเข้า เปิดแผงรายละเอียดของแต่ละอะไหล่เพื่อดูทั้งค่า WMA และค่าเฉลี่ยทั้งหมดเทียบกัน พร้อมกราฟแท่งรายปี อะไหล่ที่มีการเบิกน้อยกว่า 2 ครั้ง หรือมีประวัติน้อยกว่า 6 เดือน จะถูกจัดเป็น \"ข้อมูลไม่เพียงพอ\" และคงค่าเดิมไว้ก่อน คลิกแต่ละแถวเพื่อดูประวัติการเบิกจ่ายทั้งหมด และเปิดไฟล์ STOCK CARD PDF ต้นฉบับได้ ข้อมูลทั้งหมดในหน้านี้ประมวลผลและแสดงผลในเครื่องเท่านั้น ไม่มีการอัปโหลดขึ้นเซิร์ฟเวอร์ภายนอกใดๆ",
+    freqLabel: {"高頻":"ใช้บ่อยมาก","中頻":"ใช้ปานกลาง","低頻":"ใช้น้อย","極少使用":"ใช้น้อยมาก","從未領用":"ไม่เคยเบิก"},
+    recoLabel: {increase:"⚠️ แนะนำเพิ่มสต๊อก", decrease:"📉 แนะนำลดสต๊อก", mixed:"🔀 แนะนำปรับช่วง", unset:"❓ ยังไม่ได้ตั้งค่า", ok:"✅ การตั้งค่าเหมาะสมแล้ว", nodata:"⏳ ข้อมูลไม่เพียงพอ"},
+    recoShort: {increase:"เพิ่มสต๊อก", decrease:"ลดสต๊อก", mixed:"ปรับช่วง", unset:"ยังไม่ตั้งค่า", ok:"เหมาะสมแล้ว", nodata:"ข้อมูลไม่พอ"},
+    groupLabel: {ELECTRICAL:"ไฟฟ้า", MECHANICAL:"เครื่องกล", PNEUMATIC:"นิวเมติกส์", SUPPLIES:"วัสดุสิ้นเปลือง", LUBRICATION:"น้ำมันหล่อลื่น"},
+    noteText: (it) => {
+      const minPart = `Min ${it.current_min}→${it.reco_min}`;
+      const maxPart = (it.current_max!=null) ? `Max ${it.current_max}→${it.reco_max}` : null;
+      if (it.recoType==='increase' || it.recoType==='decrease'){
+        const label = it.recoType==='increase' ? 'แนะนำเพิ่ม: ' : 'แนะนำลด: ';
+        const parts = [];
+        if (it.recoType==='increase' ? it.minDelta>=1 : it.minDelta<=-1) parts.push(minPart);
+        if (maxPart && (it.recoType==='increase' ? it.maxDelta>=1 : it.maxDelta<=-1)) parts.push(maxPart);
+        return label + parts.join('、');
+      }
+      if (it.recoType==='mixed') return `แนะนำปรับช่วง: ${minPart}${maxPart?'、'+maxPart:''}`;
+      if (it.recoType==='unset') return `ยังไม่ได้ตั้งค่า แนะนำตั้ง Min ${it.reco_min} / Max ${it.reco_max}`;
+      if (it.recoType==='ok') return `การตั้งค่าปัจจุบันเหมาะสมแล้ว`;
+      return `ข้อมูลไม่เพียงพอ คงค่าเดิมไว้ก่อน`;
+    },
+    drawerGroupLoc: "กลุ่ม / ตำแหน่ง", drawerVendor: "ผู้ขาย", drawerFreq: "ความถี่การเสีย/เปลี่ยน", drawerIssues: "จำนวนครั้ง/ปี",
+    drawerUsageQty: "WMA 3 ปี (ชิ้น/ปี)", drawerUsageFlat: "ค่าเฉลี่ยทั้งหมด (ชิ้น/ปี)",
+    yearlyChartTitle: "📊 ปริมาณการเบิกรายปี",
+    yearlyChartHint: "แท่ง = ปริมาณที่เบิกจริงในแต่ละปี, เส้นประสีน้ำเงิน = ค่าเฉลี่ยเคลื่อนที่ถ่วงน้ำหนัก (WMA) 3 ปีล่าสุด น้ำหนัก 1/2/3 (ใช้คำนวณคำแนะนำ), เส้นจุดสีเทา = ค่าเฉลี่ยทั้งหมดแบบไม่ถ่วงน้ำหนัก",
+    yearlyAvgLabel: (w,f) => `WMA 3 ปี: ${w} ชิ้น/ปี (ใช้คำนวณคำแนะนำ)　·　ค่าเฉลี่ย: ${f} ชิ้น/ปี`,
+    yearPartialTag: " (ถึงปัจจุบัน)",
+    drawerCurMinMax: "Min / Max ปัจจุบัน", drawerRecoMinMax: "Min / Max แนะนำ",
+    pdfLinkText: "เปิดไฟล์ STOCK CARD PDF ต้นฉบับ",
+    historyTitle: (n) => `ประวัติการเบิกจ่าย (${n} รายการ ล่าสุดอยู่บนสุด)`,
+    noHistory: "อะไหล่นี้ยังไม่มีประวัติการเบิกจ่าย",
+    histDate: "วันที่", histAction: "รายการ", histQty: "จำนวน", histBalance: "คงเหลือ", histDoc: "เลขที่เอกสาร",
+    histRec: "รับเข้า", histIss: "เบิกจ่าย",
+    manualTagLabel: "เพิ่มด้วยตนเอง",
+    addRecordTitle: "เพิ่มประวัติการเบิกจ่าย",
+    addRecordDate: "วันที่", addRecordType: "ประเภท", addRecordQty: "จำนวน", addRecordDoc: "เลขที่เอกสาร",
+    addRecordDocPlaceholder: "ไม่บังคับ", addRecordSubmit: "เพิ่มรายการ",
+    addRecordInvalid: "กรุณาระบุจำนวนมากกว่า 0",
+    manualBanner: (n) => `เพิ่มข้อมูลด้วยตนเองแล้ว ${n} รายการ ซึ่งรวมอยู่ในการพยากรณ์ด้านล่างนี้แล้ว`,
+    manageBtn: (n) => `จัดการข้อมูลที่เพิ่มเอง (${n})`,
+    manageTitle: "จัดการข้อมูลที่เพิ่มเอง",
+    manageEmpty: "ยังไม่มีข้อมูลที่เพิ่มด้วยตนเอง",
+    manageDeleteConfirm: "ต้องการลบรายการที่เพิ่มด้วยตนเองนี้หรือไม่?",
+    manageClearAllBtn: "ล้างข้อมูลที่เพิ่มเองทั้งหมด",
+    manageClearAllConfirm: "การดำเนินการนี้จะลบข้อมูลที่เพิ่มด้วยตนเองทั้งหมดอย่างถาวร ต้องการดำเนินการต่อหรือไม่?",
+    manageExportBtn: "ส่งออก CSV ข้อมูลที่เพิ่มเอง",
+    manageExportFilename: "ข้อมูลที่เพิ่มเอง.csv",
+    manageColCode: "รหัส", manageColDate: "วันที่", manageColType: "ประเภท", manageColQty: "จำนวน", manageColDoc: "เลขที่เอกสาร", manageColAction: "การดำเนินการ",
+    manageDeleteAction: "ลบ",
+    pagePrev: "ก่อนหน้า", pageNext: "ถัดไป",
+    pageInfo: (p,t) => `หน้า ${p} / ${t}`,
+    rowCountRange: (start,end,total) => total===0 ? `แสดง 0 / 0 รายการ` : `แสดง ${start}-${end} จาก ${total} รายการ`,
+    managePickPlaceholder: "ค้นหาและเลือกอะไหล่ที่ต้องการเพิ่มประวัติ...",
+    manageNoItemSelected: "กรุณาค้นหาและเลือกอะไหล่ก่อน",
+    manageSelectedPrefix: "อะไหล่ที่เลือก: ",
+    manageChangeItem: "เปลี่ยน",
+    manageAddSectionTitle: "➕ เพิ่มประวัติการเบิกจ่าย",
+  },
+};
+
+let LANG = localStorage.getItem('dashboard_lang') || 'zh';
+function T(key){ return I18N[LANG][key]; }
+
+// mirrors analyze.py: insufficient data always wins (a matching current==reco is "we don't know
+// yet", not "confirmed OK"), then classify on BOTH Min and Max deltas — a part can have a fine
+// Min but a badly over/under-sized Max (or vice versa), which a Min-only check would miss entirely
+function classifyReco(current_min, current_max, reco_min, reco_max, insufficient){
+  const reco = (reco_min === null || reco_min === undefined) ? null : Number(reco_min);
+  if (insufficient || reco === null) return { recoType: 'nodata', minDelta: null, maxDelta: null };
+  const cur = (current_min === null || current_min === undefined) ? null : Number(current_min);
+  if (cur === null) return { recoType: 'unset', minDelta: null, maxDelta: null };
+  const curMax = (current_max === null || current_max === undefined) ? null : Number(current_max);
+  const minDelta = reco - cur;
+  const maxDelta = curMax === null ? null : Number(reco_max) - curMax;
+  const needsMinUp = minDelta >= 1, needsMinDown = minDelta <= -1;
+  const needsMaxUp = maxDelta !== null && maxDelta >= 1;
+  const needsMaxDown = maxDelta !== null && maxDelta <= -1;
+  const anyUp = needsMinUp || needsMaxUp, anyDown = needsMinDown || needsMaxDown;
+  let recoType;
+  if (anyUp && anyDown) recoType = 'mixed';
+  else if (anyUp) recoType = 'increase';
+  else if (anyDown) recoType = 'decrease';
+  else recoType = 'ok';
+  return { recoType, minDelta, maxDelta };
+}
+
+const items = DATA.items.map(it => {
+  const cls = classifyReco(it.current_min, it.current_max, it.reco_min, it.reco_max, it.insufficient);
+  return Object.assign({}, it, { delta: cls.minDelta, minDelta: cls.minDelta, maxDelta: cls.maxDelta, recoType: cls.recoType });
+});
+const itemByCode = {};
+items.forEach(it => itemByCode[it.code] = it);
+
+// ---- manual entries: localStorage-backed, merged into items so predictions improve as data grows ----
+const MANUAL_KEY = 'sp_manual_entries_v1';
+function loadManualStore(){
+  try { return JSON.parse(localStorage.getItem(MANUAL_KEY) || '{}'); } catch(e){ return {}; }
+}
+function saveManualStore(store){
+  localStorage.setItem(MANUAL_KEY, JSON.stringify(store));
+}
+function manualCount(store){
+  return Object.values(store).reduce((sum, arr) => sum + arr.length, 0);
+}
+
+const TODAY = new Date('2026-08-03T00:00:00');
+function daysBetween(a, b){ return Math.round((b - a) / 86400000); }
+
+// mirrors analyze.py's per-item calculation, so recommendations recompute live as records are added
+function computeStats(history, currentMin, currentMax){
+  const sorted = history.slice().sort((a,b)=> a.date < b.date ? -1 : (a.date > b.date ? 1 : 0));
+  const iss = sorted.filter(h=>h.type==='ISS');
+  const rec = sorted.filter(h=>h.type==='REC');
+  const nIss = iss.length, nRec = rec.length;
+  const totalIss = iss.reduce((s,h)=> s+Number(h.qty), 0);
+  const totalRec = rec.reduce((s,h)=> s+Number(h.qty), 0);
+
+  let firstDate = null, lastDate = null, spanDays = 0, spanYears = 0;
+  if (sorted.length){
+    firstDate = new Date(sorted[0].date);
+    lastDate = new Date(sorted[sorted.length-1].date);
+    spanDays = Math.max(daysBetween(firstDate, TODAY), 1);
+    spanYears = spanDays / 365;
+  }
+  const usagePerYearFlat = spanYears > 0 ? totalIss / spanYears : 0;
+  const issuesPerYearFlat = spanYears > 0 ? nIss / spanYears : 0;
+
+  // weighted moving average (mirrors analyze.py): take the last WMA_WINDOW completed calendar
+  // years, weighted 1,2,...,N oldest-to-newest (most recent year counts most). Years outside the
+  // window are dropped entirely — unlike an exponential decay over all history — so recent trend
+  // actually moves the forecast instead of being diluted by old, no-longer-representative years.
+  const WMA_WINDOW = 3;
+  let usagePerYear = usagePerYearFlat, issuesPerYear = issuesPerYearFlat;
+  if (nIss > 0 && firstDate){
+    const byYearQty = {}, byYearCnt = {};
+    iss.forEach(h=>{
+      const y = new Date(h.date).getFullYear();
+      byYearQty[y] = (byYearQty[y]||0) + Number(h.qty);
+      byYearCnt[y] = (byYearCnt[y]||0) + 1;
+    });
+    const curYear = TODAY.getFullYear();
+    const endYear = curYear - 1;
+    const windowStart = Math.max(firstDate.getFullYear(), endYear - WMA_WINDOW + 1);
+    if (endYear >= windowStart){
+      let wSum=0, wqSum=0, wcSum=0, w=1;
+      for (let y=windowStart; y<=endYear; y++, w++){
+        wSum += w;
+        wqSum += w * (byYearQty[y]||0);
+        wcSum += w * (byYearCnt[y]||0);
+      }
+      usagePerYear = wqSum / wSum;
+      issuesPerYear = wcSum / wSum;
+    }
+  }
+
+  function avgInterval(dates){
+    if (dates.length < 2) return null;
+    let sum = 0;
+    for (let i=1;i<dates.length;i++) sum += daysBetween(new Date(dates[i-1].date), new Date(dates[i].date));
+    return sum / (dates.length - 1);
+  }
+  const avgRecInterval = avgInterval(rec);
+  const avgIssInterval = avgInterval(iss);
+  const avgIssQtyPerTx = nIss ? totalIss/nIss : 0;
+  const avgRecQtyPerTx = nRec ? totalRec/nRec : 0;
+  const dailyUsage = usagePerYear / 365;
+
+  let freqClass;
+  if (nIss === 0) freqClass = '從未領用';
+  else if (issuesPerYear >= 4) freqClass = '高頻';
+  else if (issuesPerYear >= 1.5) freqClass = '中頻';
+  else if (issuesPerYear >= 0.4) freqClass = '低頻';
+  else freqClass = '極少使用';
+
+  let recoMin = null, recoMax = null;
+  const insufficient = (nIss < 2 || spanYears < 0.5);
+  if (insufficient){
+    recoMin = currentMin; recoMax = currentMax;
+  } else {
+    const safetyFactor = 1.3;
+    let cycle = avgRecInterval || avgIssInterval || 90;
+    cycle = Math.min(Math.max(cycle, 14), 365);
+    const rawMin = dailyUsage * cycle * safetyFactor;
+    recoMin = Math.max(1, Math.ceil(rawMin));
+    recoMax = recoMin + Math.max(1, Math.ceil(avgIssQtyPerTx > 0 ? avgIssQtyPerTx : avgRecQtyPerTx));
+  }
+
+  return {
+    n_transactions: sorted.length, n_issues: nIss, n_receipts: nRec,
+    total_issued_qty: totalIss, total_received_qty: totalRec,
+    first_date: firstDate ? firstDate.toISOString().slice(0,10) : null,
+    last_date: lastDate ? lastDate.toISOString().slice(0,10) : null,
+    usage_per_year: Math.round(usagePerYear*100)/100, issues_per_year: Math.round(issuesPerYear*100)/100,
+    usage_per_year_flat: Math.round(usagePerYearFlat*100)/100, issues_per_year_flat: Math.round(issuesPerYearFlat*100)/100,
+    freq_class: freqClass, insufficient, reco_min: recoMin, reco_max: recoMax,
+    history: sorted,
+  };
+}
+
+function recomputeItem(it){
+  const merged = (it.originalHistory || it.history || []).concat(loadManualStore()[it.code] || []);
+  const stats = computeStats(merged, it.current_min, it.current_max);
+  Object.assign(it, stats);
+  const cls = classifyReco(it.current_min, it.current_max, it.reco_min, it.reco_max, stats.insufficient);
+  it.delta = cls.minDelta;
+  it.minDelta = cls.minDelta;
+  it.maxDelta = cls.maxDelta;
+  it.recoType = cls.recoType;
+}
+
+// shared by both the per-item drawer form and the manage-panel form
+function addManualEntry(code, dateVal, typeVal, qtyVal, docVal){
+  const it = itemByCode[code];
+  if (!it) return;
+  const store = loadManualStore();
+  if (!store[code]) store[code] = [];
+  const allHist = (it.originalHistory || []).concat(store[code]);
+  const lastBalance = allHist.length ? allHist.slice().sort((a,b)=> a.date < b.date ? -1 : 1)[allHist.length-1].balance || 0 : (it.stock_on_hand || 0);
+  const newBalance = typeVal === 'REC' ? (lastBalance||0) + qtyVal : Math.max(0, (lastBalance||0) - qtyVal);
+  store[code].push({ date: dateVal, type: typeVal, qty: qtyVal, balance: newBalance, doc_no: docVal || null, manual: true });
+  saveManualStore(store);
+  recomputeItem(it);
+  renderChrome();
+}
+
+// keep an immutable copy of each item's original (PDF-derived) history, then merge in any manual entries
+items.forEach(it => { it.originalHistory = (it.history || []).slice(); });
+(function mergeManualOnLoad(){
+  const store = loadManualStore();
+  Object.keys(store).forEach(code=>{
+    if (itemByCode[code] && store[code].length) recomputeItem(itemByCode[code]);
+  });
+})();
+
+function computeSummaryFromItems(){
+  const dist = {};
+  freqOrder.forEach(k => dist[k] = 0);
+  let inc=0, dec=0, mixed=0, unset=0, ok=0, nodata=0;
+  items.forEach(it=>{
+    dist[it.freq_class] = (dist[it.freq_class]||0) + 1;
+    if (it.recoType==='increase') inc++;
+    else if (it.recoType==='decrease') dec++;
+    else if (it.recoType==='mixed') mixed++;
+    else if (it.recoType==='unset') unset++;
+    else if (it.recoType==='ok') ok++;
+    else nodata++;
+  });
+  return { total_items: items.length, items_increase: inc, items_decrease: dec, items_mixed: mixed,
+    items_unset: unset, items_ok: ok, items_no_data: nodata, freq_distribution: dist };
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function minMaxDates(){
+  const dates = items.map(i=>i.first_date).filter(Boolean).concat(items.map(i=>i.last_date).filter(Boolean));
+  if (!dates.length) return '-';
+  dates.sort();
+  return dates[0] + ' ~ ' + dates[dates.length-1];
+}
+function groupChipClass(g){
+  return {'ELECTRICAL':'g-electrical','MECHANICAL':'g-mechanical','PNEUMATIC':'g-pneumatic','SUPPLIES':'g-supplies','LUBRICATION':'g-lubrication'}[g] || 'g-other';
+}
+function groupLabel(g){ return (T('groupLabel')[g]) || g || '-'; }
+function groupChip(g){
+  if (!g) return '-';
+  return `<span class="chip ${groupChipClass(g)}"><span class="cdot"></span>${escapeHtml(groupLabel(g))}</span>`;
+}
+function freqBadgeClass(f){
+  return {'高頻':'freq-high','中頻':'freq-mid','低頻':'freq-low','極少使用':'freq-rare','從未領用':'freq-never'}[f] || 'freq-never';
+}
+function freqLabel(f){ return (T('freqLabel')[f]) || f; }
+function noteTag(it){
+  return `<span class="note-tag ${it.recoType}">${escapeHtml(T('noteText')(it))}</span>`;
+}
+
+function buildYearlyUsage(it){
+  const hist = (it.history || []).filter(h=>h.type==='ISS');
+  if (!hist.length) return [];
+  const nowYear = TODAY.getFullYear();
+  let minYear = nowYear;
+  hist.forEach(h=>{ const y = parseInt(h.date.slice(0,4),10); if (y < minYear) minYear = y; });
+  const buckets = {};
+  for (let y=minYear; y<=nowYear; y++) buckets[y] = 0;
+  hist.forEach(h=>{
+    const y = parseInt(h.date.slice(0,4),10);
+    buckets[y] = (buckets[y]||0) + Number(h.qty);
+  });
+  return Object.keys(buckets).sort().map(y=> ({ year: Number(y), qty: Math.round(buckets[y]*100)/100 }));
+}
+
+function yearlyChartHtml(it){
+  const data = buildYearlyUsage(it);
+  if (!data.length) return '';
+  const weighted = it.usage_per_year || 0;
+  const flat = it.usage_per_year_flat || 0;
+  const max = Math.max(...data.map(d=>d.qty), weighted, flat, 1);
+  const weightedPct = Math.max(0, Math.min(100, (weighted/max*100)));
+  const flatPct = Math.max(0, Math.min(100, (flat/max*100)));
+  const curYear = TODAY.getFullYear();
+  const bars = data.map(d=>{
+    const pct = max ? (d.qty/max*100) : 0;
+    const isCurrent = d.year === curYear;
+    return `<div class="ybar-col${isCurrent?' current':''}">
+      <div class="ybar-value">${d.qty}</div>
+      <div class="ybar-track"><div class="ybar-fill" style="height:${pct}%"></div></div>
+      <div class="ybar-label">${d.year}${isCurrent ? escapeHtml(T('yearPartialTag')) : ''}</div>
+    </div>`;
+  }).join('');
+  return `<div class="year-chart-wrap">
+    <h4>${T('yearlyChartTitle')}</h4>
+    <p class="hint">${T('yearlyChartHint')}</p>
+    <div class="year-chart">
+      <div class="year-flat-line" style="bottom:${flatPct}%"></div>
+      <div class="year-avg-line" style="bottom:${weightedPct}%"></div>
+      ${bars}
+    </div>
+    <div class="year-chart-legend">${escapeHtml(T('yearlyAvgLabel')(weighted, flat))}</div>
+  </div>`;
+}
+
+const groupsAll = Array.from(new Set(items.map(i=>i.group).filter(Boolean))).sort();
+const freqOrder = ['從未領用','極少使用','低頻','中頻','高頻'];
+const freqColor = {'從未領用':'var(--gridline)','極少使用':'var(--seq-250)','低頻':'var(--seq-350)','中頻':'var(--seq-450)','高頻':'var(--seq-650)'};
+
+let sortKey = 'delta';
+let sortDir = -1;
+
+function currentFilters(){
+  return {
+    q: document.getElementById('search').value.trim().toLowerCase(),
+    group: document.getElementById('filter-group').value,
+    freq: document.getElementById('filter-freq').value,
+    reco: document.getElementById('filter-reco').value,
+  };
+}
+function applyFilters(list){
+  const f = currentFilters();
+  return list.filter(it=>{
+    if (f.group && it.group !== f.group) return false;
+    if (f.freq && it.freq_class !== f.freq) return false;
+    if (f.reco && it.recoType !== f.reco) return false;
+    if (f.q){
+      const hay = [it.code, it.name_th, it.name_en, it.vendor, it.location, it.model].filter(Boolean).join(' ').toLowerCase();
+      if (hay.indexOf(f.q) === -1) return false;
+    }
+    return true;
+  });
+}
+function sortList(list){
+  const dir = sortDir;
+  return list.slice().sort((a,b)=>{
+    let va = a[sortKey], vb = b[sortKey];
+    if (va === null || va === undefined) va = (typeof vb === 'number') ? -Infinity : '';
+    if (vb === null || vb === undefined) vb = (typeof va === 'number') ? -Infinity : '';
+    if (typeof va === 'number' && typeof vb === 'number') return (va-vb)*dir;
+    return String(va).localeCompare(String(vb)) * dir;
+  });
+}
+
+function renderChrome(){
+  document.documentElement.lang = LANG === 'zh' ? 'zh-Hant' : (LANG === 'th' ? 'th' : 'en');
+  document.querySelectorAll('[data-i]').forEach(el=>{
+    const key = el.dataset.i;
+    const v = T(key);
+    if (typeof v === 'string') el.textContent = v;
+  });
+  document.getElementById('last-updated').textContent = T('lastUpdated')(minMaxDates(), '2026-08-03');
+  document.getElementById('search').placeholder = T('searchPlaceholder');
+
+  const summary = computeSummaryFromItems();
+  document.getElementById('tile-total').textContent = summary.total_items;
+  document.getElementById('tile-increase').textContent = summary.items_increase;
+  document.getElementById('tile-decrease').textContent = summary.items_decrease;
+  document.getElementById('tile-unset').textContent = summary.items_unset;
+  document.getElementById('tile-mixed').textContent = summary.items_mixed;
+  document.getElementById('tile-ok').textContent = summary.items_ok;
+  document.getElementById('tile-nodata').textContent = summary.items_no_data;
+
+  const mCount = manualCount(loadManualStore());
+  document.getElementById('manage-btn').textContent = '✏️ ' + T('manageBtn')(mCount);
+  const bannerSlot = document.getElementById('manual-banner-slot');
+  bannerSlot.innerHTML = mCount > 0 ? `<div class="manual-banner">✏️ ${escapeHtml(T('manualBanner')(mCount))}</div>` : '';
+
+  // filter selects
+  const groupSel = document.getElementById('filter-group');
+  const curGroup = groupSel.value;
+  groupSel.innerHTML = `<option value="">${T('filterGroupAll')}</option>` +
+    groupsAll.map(g=>`<option value="${g}">${escapeHtml(groupLabel(g))}</option>`).join('');
+  groupSel.value = curGroup;
+
+  const freqSel = document.getElementById('filter-freq');
+  const curFreq = freqSel.value;
+  freqSel.innerHTML = `<option value="">${T('filterFreqAll')}</option>` +
+    freqOrder.slice().reverse().map(f=>`<option value="${f}">${escapeHtml(freqLabel(f))}</option>`).join('');
+  freqSel.value = curFreq;
+
+  const recoSel = document.getElementById('filter-reco');
+  const curReco = recoSel.value;
+  const recoKeys = ['increase','decrease','mixed','unset','ok','nodata'];
+  recoSel.innerHTML = `<option value="">${T('filterRecoAll')}</option>` +
+    recoKeys.map(k=>`<option value="${k}">${escapeHtml(T('recoShort')[k])}</option>`).join('');
+  recoSel.value = curReco;
+
+  // freq chart
+  const dist = summary.freq_distribution;
+  const maxF = Math.max(...freqOrder.map(k => dist[k]||0));
+  const elF = document.getElementById('freq-chart');
+  elF.innerHTML = '';
+  freqOrder.forEach(k=>{
+    const v = dist[k] || 0;
+    const pct = maxF ? (v/maxF*100) : 0;
+    const row = document.createElement('div');
+    row.className = 'barrow';
+    row.innerHTML = `<div class="name">${escapeHtml(freqLabel(k))}</div><div class="track"><div class="fill" style="width:${pct}%; background:${freqColor[k]}"></div></div><div class="count">${v}</div>`;
+    elF.appendChild(row);
+  });
+
+  // top increase chart
+  const top = items.filter(i=>i.recoType==='increase' && i.delta!==null).sort((a,b)=> b.delta - a.delta).slice(0,15);
+  const maxT = Math.max(...top.map(i=>i.delta), 1);
+  const elT = document.getElementById('top-increase-chart');
+  elT.innerHTML = '';
+  top.forEach(i=>{
+    const pct = (i.delta/maxT*100);
+    const div = document.createElement('div');
+    div.className = 'hbar-item';
+    div.innerHTML = `<div class="top-line"><span class="name-part"><b>${i.code}</b> ${escapeHtml(i.name_th||'')}</span><span>+${i.delta} (${i.current_min}→${i.reco_min})</span></div><div class="track"><div class="fill" style="width:${pct}%"></div></div>`;
+    div.addEventListener('click', ()=> openDrawer(i.code));
+    elT.appendChild(div);
+  });
+  if (!top.length) elT.innerHTML = `<p class="hint">${T('topPanelEmpty')}</p>`;
+
+  document.querySelectorAll('.lang-btn').forEach(b=> b.classList.toggle('active', b.dataset.lang === LANG));
+
+  render(true);
+}
+
+const PAGE_SIZE = 20;
+let currentPage = 1;
+
+function render(resetPage){
+  if (resetPage) currentPage = 1;
+  const filtered = sortList(applyFilters(items));
+  window.__filtered = filtered;
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  if (currentPage > totalPages) currentPage = totalPages;
+  const startIdx = (currentPage - 1) * PAGE_SIZE;
+  const pageItems = filtered.slice(startIdx, startIdx + PAGE_SIZE);
+
+  const tbody = document.getElementById('table-body');
+  tbody.innerHTML = pageItems.map(it=>{
+    const deltaCls = it.delta > 0 ? 'up' : (it.delta < 0 ? 'down' : 'flat');
+    const deltaTxt = (it.delta === null || it.delta === undefined) ? '-' : (it.delta > 0 ? '+'+it.delta : it.delta);
+    return `<tr class="${it.recoType}" data-code="${escapeHtml(it.code)}">
+      <td><span class="code-link">📄 ${escapeHtml(it.code)}</span></td>
+      <td class="name-cell"><div class="name-th">${escapeHtml(it.name_th||'')}</div>${it.model ? `<div class="name-en">${escapeHtml(it.model)}</div>` : ''}</td>
+      <td>${groupChip(it.group)}</td>
+      <td>${escapeHtml(it.location||'-')}</td>
+      <td>${escapeHtml(it.vendor||'-')}</td>
+      <td><span class="badge ${freqBadgeClass(it.freq_class)}">${escapeHtml(freqLabel(it.freq_class))}</span></td>
+      <td class="num">${it.issues_per_year ?? 0}</td>
+      <td class="num">${it.usage_per_year ?? 0}</td>
+      <td class="num">${it.current_min ?? '-'}</td>
+      <td class="num">${it.current_max ?? '-'}</td>
+      <td class="num">${it.reco_min ?? '-'}</td>
+      <td class="num">${it.reco_max ?? '-'}</td>
+      <td class="num"><span class="delta ${deltaCls}">${deltaTxt}</span></td>
+      <td>${noteTag(it)}</td>
+    </tr>`;
+  }).join('');
+
+  const rangeStart = filtered.length ? startIdx + 1 : 0;
+  const rangeEnd = Math.min(startIdx + PAGE_SIZE, filtered.length);
+  document.getElementById('row-count').textContent = T('rowCountRange')(rangeStart, rangeEnd, filtered.length);
+
+  const pager = document.getElementById('pagination');
+  pager.innerHTML = `
+    <span>${escapeHtml(T('rowCountRange')(rangeStart, rangeEnd, filtered.length))}</span>
+    <div class="pager-btns">
+      <button id="page-prev" ${currentPage<=1?'disabled':''}>‹ ${escapeHtml(T('pagePrev'))}</button>
+      <span>${escapeHtml(T('pageInfo')(currentPage, totalPages))}</span>
+      <button id="page-next" ${currentPage>=totalPages?'disabled':''}>${escapeHtml(T('pageNext'))} ›</button>
+    </div>`;
+  const prevBtn = document.getElementById('page-prev');
+  const nextBtn = document.getElementById('page-next');
+  if (prevBtn) prevBtn.addEventListener('click', ()=>{ currentPage--; render(false); document.querySelector('.table-wrap').scrollIntoView({behavior:'smooth', block:'start'}); });
+  if (nextBtn) nextBtn.addEventListener('click', ()=>{ currentPage++; render(false); document.querySelector('.table-wrap').scrollIntoView({behavior:'smooth', block:'start'}); });
+
+  tbody.querySelectorAll('tr').forEach(tr=>{
+    tr.addEventListener('click', ()=> openDrawer(tr.dataset.code));
+  });
+}
+
+document.querySelectorAll('#table-head th').forEach(th=>{
+  th.addEventListener('click', ()=>{
+    const key = th.dataset.key;
+    if (sortKey === key) sortDir *= -1; else { sortKey = key; sortDir = -1; }
+    document.querySelectorAll('#table-head th').forEach(t=>{ t.classList.remove('sorted'); });
+    th.classList.add('sorted');
+    th.dataset.arrow = sortDir === 1 ? '▲' : '▼';
+    render(true);
+  });
+});
+['filter-group','filter-freq','filter-reco'].forEach(id=> document.getElementById(id).addEventListener('change', ()=> render(true)));
+
+document.querySelectorAll('.tile[data-reco]').forEach(t=>{
+  t.addEventListener('click', ()=>{
+    document.getElementById('filter-reco').value = t.dataset.reco;
+    render(true);
+    document.querySelector('.table-wrap').scrollIntoView({behavior:'smooth', block:'start'});
+  });
+});
+
+// ---- searchable combobox ----
+const searchInput = document.getElementById('search');
+const dropdownPanel = document.getElementById('dropdown-panel');
+const clearBtn = document.getElementById('clear-search');
+let activeIdx = -1;
+let currentMatches = [];
+
+function updateDropdown(){
+  const q = searchInput.value.trim().toLowerCase();
+  clearBtn.style.display = q ? 'inline-block' : 'none';
+  if (!q){ dropdownPanel.style.display = 'none'; render(true); return; }
+  currentMatches = items.filter(it=>{
+    const hay = [it.code, it.name_th, it.name_en, it.vendor, it.location, it.model].filter(Boolean).join(' ').toLowerCase();
+    return hay.indexOf(q) !== -1;
+  }).slice(0, 12);
+  activeIdx = -1;
+  if (!currentMatches.length){
+    dropdownPanel.innerHTML = `<div class="dropdown-empty">${T('dropdownEmpty')}</div>`;
+  } else {
+    dropdownPanel.innerHTML = currentMatches.map((it,i)=>
+      `<div class="dropdown-item" data-idx="${i}"><span class="d-code">${escapeHtml(it.code)}</span><span class="d-name">${escapeHtml(it.name_th||'')}</span><span class="badge ${freqBadgeClass(it.freq_class)}">${escapeHtml(freqLabel(it.freq_class))}</span></div>`
+    ).join('');
+    dropdownPanel.querySelectorAll('.dropdown-item').forEach(el=>{
+      el.addEventListener('click', ()=>{
+        const it = currentMatches[Number(el.dataset.idx)];
+        dropdownPanel.style.display = 'none';
+        openDrawer(it.code);
+      });
+    });
+  }
+  dropdownPanel.style.display = 'block';
+  render(true);
+}
+searchInput.addEventListener('input', updateDropdown);
+searchInput.addEventListener('focus', ()=>{ if (searchInput.value.trim()) updateDropdown(); });
+searchInput.addEventListener('keydown', (e)=>{
+  if (dropdownPanel.style.display === 'none') return;
+  const els = dropdownPanel.querySelectorAll('.dropdown-item');
+  if (e.key === 'ArrowDown'){ e.preventDefault(); activeIdx = Math.min(activeIdx+1, els.length-1); }
+  else if (e.key === 'ArrowUp'){ e.preventDefault(); activeIdx = Math.max(activeIdx-1, 0); }
+  else if (e.key === 'Enter'){ if (activeIdx>=0 && currentMatches[activeIdx]){ dropdownPanel.style.display='none'; openDrawer(currentMatches[activeIdx].code); } return; }
+  else if (e.key === 'Escape'){ dropdownPanel.style.display = 'none'; return; }
+  else return;
+  els.forEach((el,i)=> el.classList.toggle('active', i===activeIdx));
+});
+clearBtn.addEventListener('click', ()=>{ searchInput.value=''; dropdownPanel.style.display='none'; render(true); searchInput.focus(); });
+document.addEventListener('click', (e)=>{
+  if (!document.getElementById('searchbox').contains(e.target)) dropdownPanel.style.display = 'none';
+});
+
+// ---- styled Excel export (SpreadsheetML 2003 — real cell colors + fonts, no external library needed) ----
+function xmlEscape(s){
+  return String(s===null||s===undefined?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+// row background tints mirror the dashboard's recoType colors (critical/warning/serious/good/muted)
+const XLS_ROW_FILL = {
+  increase: 'FBE2E1', decrease: 'FFF1CE', mixed: 'E9E1F5', unset: 'FCE4DA', ok: 'E5F5E3', nodata: 'ECECEC'
+};
+const XLS_HEADER_FILL = 'DCE7FA';
+function buildStyledExcel(rows){
+  // columns whose *content* is Chinese UI text get 標楷體 (Kaiti); everything else (codes, Thai/English names, numbers) gets Times New Roman — both size 12, per the requested font spec.
+  const cols = [
+    {key:'code', header:T('thCode'), cn:false, type:'string'},
+    {key:'name_th', header:T('thName'), cn:false, type:'string'},
+    {key:'model', header:'Model', cn:false, type:'string'},
+    {key:'group', header:T('thGroup'), cn:true, type:'string', val:it=>groupLabel(it.group)},
+    {key:'location', header:T('thLocation'), cn:false, type:'string'},
+    {key:'vendor', header:T('thVendor'), cn:false, type:'string'},
+    {key:'freq_class', header:T('thFreq'), cn:true, type:'string', val:it=>freqLabel(it.freq_class)},
+    {key:'issues_per_year', header:T('thIssuesPerYear'), cn:false, type:'number'},
+    {key:'usage_per_year', header:T('thUsageQty'), cn:false, type:'number'},
+    {key:'usage_per_year', header:T('thUsageQty'), cn:false, type:'number'},
+    {key:'current_min', header:T('thCurMin'), cn:false, type:'number'},
+    {key:'current_max', header:T('thCurMax'), cn:false, type:'number'},
+    {key:'reco_min', header:T('thRecoMin'), cn:false, type:'number'},
+    {key:'reco_max', header:T('thRecoMax'), cn:false, type:'number'},
+    {key:'delta', header:T('thDelta'), cn:false, type:'number'},
+    {key:'reco_note', header:T('thRecoNote'), cn:true, type:'string', val:it=>T('noteText')(it)},
+  ];
+
+  // one <Style> per (recoType x isChinese) combo, plus a header style
+  const recoTypes = ['increase','decrease','mixed','unset','ok','nodata'];
+  let stylesXml = `<Style ss:ID="sHeader"><Font ss:FontName="標楷體" ss:Size="12" ss:Bold="1"/><Interior ss:Color="#${XLS_HEADER_FILL}" ss:Pattern="Solid"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/></Borders></Style>\n`;
+  recoTypes.forEach(rt=>{
+    const fill = XLS_ROW_FILL[rt];
+    stylesXml += `<Style ss:ID="s_${rt}_cn"><Font ss:FontName="標楷體" ss:Size="12"/><Interior ss:Color="#${fill}" ss:Pattern="Solid"/></Style>\n`;
+    stylesXml += `<Style ss:ID="s_${rt}_en"><Font ss:FontName="Times New Roman" ss:Size="12"/><Interior ss:Color="#${fill}" ss:Pattern="Solid"/></Style>\n`;
+  });
+
+  let rowsXml = '<Row>' + cols.map(c=>`<Cell ss:StyleID="sHeader"><Data ss:Type="String">${xmlEscape(c.header)}</Data></Cell>`).join('') + '</Row>\n';
+  rows.forEach(it=>{
+    const rt = it.recoType || 'nodata';
+    rowsXml += '<Row>' + cols.map(c=>{
+      const styleId = c.cn ? `s_${rt}_cn` : `s_${rt}_en`;
+      const raw = c.val ? c.val(it) : it[c.key];
+      if (c.type === 'number'){
+        const num = (raw===null||raw===undefined||raw==='') ? '' : Number(raw);
+        return num===''
+          ? `<Cell ss:StyleID="${styleId}"><Data ss:Type="String"></Data></Cell>`
+          : `<Cell ss:StyleID="${styleId}"><Data ss:Type="Number">${num}</Data></Cell>`;
+      }
+      return `<Cell ss:StyleID="${styleId}"><Data ss:Type="String">${xmlEscape(raw)}</Data></Cell>`;
+    }).join('') + '</Row>\n';
+  });
+
+  return `<?xml version="1.0"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+<Styles>
+${stylesXml}</Styles>
+<Worksheet ss:Name="Sheet1">
+<Table>
+${rowsXml}</Table>
+</Worksheet>
+</Workbook>`;
+}
+
+document.getElementById('export-csv').addEventListener('click', ()=>{
+  const rows = window.__filtered || items;
+  const xml = buildStyledExcel(rows);
+  const blob = new Blob(['﻿' + xml], {type:'application/vnd.ms-excel;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = T('csvFilename');
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+// ---- detail drawer ----
+const overlay = document.getElementById('overlay');
+const drawer = document.getElementById('drawer');
+
+function openDrawer(code){
+  const it = itemByCode[code];
+  if (!it) return;
+  document.getElementById('drawer-code').textContent = it.code;
+  document.getElementById('drawer-name').textContent = it.name_th || it.name_en || it.code;
+
+  const hist = (it.history || []).slice().sort((a,b)=> a.date < b.date ? 1 : -1);
+  const histRows = hist.map(h=>
+    `<tr><td>${h.date}</td><td><span class="hist-badge ${h.type}">${h.type==='REC'?T('histRec'):T('histIss')}</span>${h.manual ? `<span class="manual-flag">✏️</span>`:''}</td>
+     <td class="num">${h.qty}</td><td class="num">${h.balance ?? '-'}</td><td>${escapeHtml(h.doc_no||'-')}</td></tr>`
+  ).join('');
+  const todayStr = TODAY.toISOString().slice(0,10);
+
+  document.getElementById('drawer-body').innerHTML = `
+    <a class="pdf-link" href="../${encodeURIComponent(it.pdf_file)}" target="_blank" rel="noopener">
+      📄 ${T('pdfLinkText')}
+    </a>
+    <div class="drawer-grid">
+      <div class="drawer-stat"><div class="k">${T('drawerGroupLoc')}</div><div class="v" style="font-size:13px;">${groupChip(it.group)} · ${escapeHtml(it.location||'-')}</div></div>
+      <div class="drawer-stat"><div class="k">${T('drawerVendor')}</div><div class="v" style="font-size:13px;">${escapeHtml(it.vendor||'-')}</div></div>
+      <div class="drawer-stat"><div class="k">${T('drawerFreq')}</div><div class="v"><span class="badge ${freqBadgeClass(it.freq_class)}">${escapeHtml(freqLabel(it.freq_class))}</span></div></div>
+      <div class="drawer-stat"><div class="k">${T('drawerIssues')}</div><div class="v">${it.issues_per_year ?? 0}</div></div>
+      <div class="drawer-stat"><div class="k">${T('drawerUsageQty')}</div><div class="v">${it.usage_per_year ?? 0}</div></div>
+      <div class="drawer-stat"><div class="k">${T('drawerUsageFlat')}</div><div class="v">${it.usage_per_year_flat ?? 0}</div></div>
+      <div class="drawer-stat"><div class="k">${T('drawerCurMinMax')}</div><div class="v">${it.current_min ?? '-'} / ${it.current_max ?? '-'}</div></div>
+      <div class="drawer-stat"><div class="k">${T('drawerRecoMinMax')}</div><div class="v">${it.reco_min ?? '-'} / ${it.reco_max ?? '-'}</div></div>
+    </div>
+    <div class="drawer-reco ${it.recoType}"><b>${T('recoLabel')[it.recoType]}</b><br>${escapeHtml(T('noteText')(it))}</div>
+
+    ${yearlyChartHtml(it)}
+
+    <div class="add-record">
+      <h4>➕ ${T('addRecordTitle')}</h4>
+      <div id="add-record-error" class="add-record-error" style="display:none;"></div>
+      <div class="add-record-grid">
+        <div><label>${T('addRecordDate')}</label><input type="date" id="ar-date" value="${todayStr}" max="${todayStr}"></div>
+        <div><label>${T('addRecordType')}</label>
+          <select id="ar-type"><option value="ISS">${T('histIss')}</option><option value="REC">${T('histRec')}</option></select>
+        </div>
+        <div><label>${T('addRecordQty')}</label><input type="number" id="ar-qty" min="0.01" step="1" value="1"></div>
+        <div><label>${T('addRecordDoc')}</label><input type="text" id="ar-doc" placeholder="${T('addRecordDocPlaceholder')}"></div>
+      </div>
+      <button id="ar-submit">${T('addRecordSubmit')}</button>
+    </div>
+
+    <h4>${T('historyTitle')(hist.length)}</h4>
+    ${hist.length ? `<table class="hist-table"><thead><tr><th>${T('histDate')}</th><th>${T('histAction')}</th><th class="num">${T('histQty')}</th><th class="num">${T('histBalance')}</th><th>${T('histDoc')}</th></tr></thead><tbody>${histRows}</tbody></table>` : `<div class="no-history">${T('noHistory')}</div>`}
+  `;
+  overlay.classList.add('open');
+  drawer.classList.add('open');
+
+  document.getElementById('ar-submit').addEventListener('click', ()=>{
+    const dateVal = document.getElementById('ar-date').value || todayStr;
+    const typeVal = document.getElementById('ar-type').value;
+    const qtyVal = parseFloat(document.getElementById('ar-qty').value);
+    const docVal = document.getElementById('ar-doc').value.trim();
+    const errEl = document.getElementById('add-record-error');
+    if (!qtyVal || qtyVal <= 0){
+      errEl.textContent = T('addRecordInvalid');
+      errEl.style.display = 'block';
+      return;
+    }
+    errEl.style.display = 'none';
+    addManualEntry(it.code, dateVal, typeVal, qtyVal, docVal);
+    openDrawer(it.code);
+  });
+}
+function closeDrawer(){ overlay.classList.remove('open'); drawer.classList.remove('open'); }
+document.getElementById('drawer-close').addEventListener('click', closeDrawer);
+overlay.addEventListener('click', closeDrawer);
+document.addEventListener('keydown', (e)=>{ if (e.key === 'Escape') closeDrawer(); });
+
+// ---- manual data management panel (reuses the same drawer) ----
+let manageSelectedCode = null;
+function openManagePanel(){
+  document.getElementById('drawer-code').textContent = '';
+  document.getElementById('drawer-name').textContent = T('manageTitle');
+  const store = loadManualStore();
+  const rows = [];
+  Object.keys(store).forEach(code=>{
+    store[code].forEach((entry, idx)=>{
+      rows.push({ code, idx, entry });
+    });
+  });
+  rows.sort((a,b)=> a.entry.date < b.entry.date ? 1 : -1);
+
+  const rowsHtml = rows.map(r=>{
+    const it = itemByCode[r.code];
+    const label = r.entry.type === 'REC' ? T('histRec') : T('histIss');
+    return `<div class="manage-row">
+      <span class="m-code">${escapeHtml(r.code)}</span>
+      <span class="m-mid">${r.entry.date} · ${label} · ${r.entry.qty} ${it && it.unit ? escapeHtml(it.unit) : ''}${r.entry.doc_no ? ' · '+escapeHtml(r.entry.doc_no) : ''}</span>
+      <button class="m-del" data-code="${escapeHtml(r.code)}" data-idx="${r.idx}">${T('manageDeleteAction')}</button>
+    </div>`;
+  }).join('');
+
+  const selectedItem = manageSelectedCode ? itemByCode[manageSelectedCode] : null;
+  const todayStr = TODAY.toISOString().slice(0,10);
+  const addSectionHtml = `
+    <div class="add-record">
+      <h4>${T('manageAddSectionTitle')}</h4>
+      <div id="mgr-picker-box" class="searchbox" style="margin-bottom:10px;${selectedItem?'display:none;':''}">
+        <div class="field">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="mgr-picker" placeholder="${T('managePickPlaceholder')}" autocomplete="off">
+        </div>
+        <div class="dropdown-panel" id="mgr-dropdown" style="display:none;"></div>
+      </div>
+      ${selectedItem ? `
+        <div class="manual-banner" style="margin-bottom:10px;">
+          ${escapeHtml(T('manageSelectedPrefix'))}<b>${escapeHtml(selectedItem.code)}</b> ${escapeHtml(selectedItem.name_th||'')}
+          <button id="mgr-change-item" style="margin-left:auto;" class="clear-btn">${escapeHtml(T('manageChangeItem'))}</button>
+        </div>
+        <div id="mgr-add-error" class="add-record-error" style="display:none;"></div>
+        <div class="add-record-grid">
+          <div><label>${T('addRecordDate')}</label><input type="date" id="mgr-date" value="${todayStr}" max="${todayStr}"></div>
+          <div><label>${T('addRecordType')}</label>
+            <select id="mgr-type"><option value="ISS">${T('histIss')}</option><option value="REC">${T('histRec')}</option></select>
+          </div>
+          <div><label>${T('addRecordQty')}</label><input type="number" id="mgr-qty" min="0.01" step="1" value="1"></div>
+          <div><label>${T('addRecordDoc')}</label><input type="text" id="mgr-doc" placeholder="${T('addRecordDocPlaceholder')}"></div>
+        </div>
+        <button id="mgr-submit">${T('addRecordSubmit')}</button>
+      ` : `<div class="hint" style="margin:0;">${T('manageNoItemSelected')}</div>`}
+    </div>
+  `;
+
+  document.getElementById('drawer-body').innerHTML = `
+    ${addSectionHtml}
+    ${rows.length ? rowsHtml : `<div class="no-history">${T('manageEmpty')}</div>`}
+    <div class="manage-actions">
+      <button id="manage-export">⬇ ${T('manageExportBtn')}</button>
+      ${rows.length ? `<button id="manage-clear-all" class="danger">🗑 ${T('manageClearAllBtn')}</button>` : ''}
+    </div>
+  `;
+
+  // item picker autocomplete
+  const pickerInput = document.getElementById('mgr-picker');
+  if (pickerInput){
+    const pickerDropdown = document.getElementById('mgr-dropdown');
+    pickerInput.addEventListener('input', ()=>{
+      const q = pickerInput.value.trim().toLowerCase();
+      if (!q){ pickerDropdown.style.display = 'none'; return; }
+      const matches = items.filter(it=>{
+        const hay = [it.code, it.name_th, it.vendor, it.location, it.model].filter(Boolean).join(' ').toLowerCase();
+        return hay.indexOf(q) !== -1;
+      }).slice(0, 12);
+      pickerDropdown.innerHTML = matches.length
+        ? matches.map(it=> `<div class="dropdown-item" data-code="${escapeHtml(it.code)}"><span class="d-code">${escapeHtml(it.code)}</span><span class="d-name">${escapeHtml(it.name_th||'')}</span></div>`).join('')
+        : `<div class="dropdown-empty">${T('dropdownEmpty')}</div>`;
+      pickerDropdown.style.display = 'block';
+      pickerDropdown.querySelectorAll('.dropdown-item').forEach(el=>{
+        el.addEventListener('click', ()=>{
+          manageSelectedCode = el.dataset.code;
+          openManagePanel();
+        });
+      });
+    });
+  }
+  const changeBtn = document.getElementById('mgr-change-item');
+  if (changeBtn) changeBtn.addEventListener('click', ()=>{ manageSelectedCode = null; openManagePanel(); });
+
+  const mgrSubmit = document.getElementById('mgr-submit');
+  if (mgrSubmit) mgrSubmit.addEventListener('click', ()=>{
+    const dateVal = document.getElementById('mgr-date').value || todayStr;
+    const typeVal = document.getElementById('mgr-type').value;
+    const qtyVal = parseFloat(document.getElementById('mgr-qty').value);
+    const docVal = document.getElementById('mgr-doc').value.trim();
+    const errEl = document.getElementById('mgr-add-error');
+    if (!qtyVal || qtyVal <= 0){
+      errEl.textContent = T('addRecordInvalid');
+      errEl.style.display = 'block';
+      return;
+    }
+    addManualEntry(manageSelectedCode, dateVal, typeVal, qtyVal, docVal);
+    openManagePanel();
+  });
+
+  document.querySelectorAll('.m-del').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      if (!confirm(T('manageDeleteConfirm'))) return;
+      const code = btn.dataset.code, idx = Number(btn.dataset.idx);
+      const s = loadManualStore();
+      if (s[code]) { s[code].splice(idx, 1); if (!s[code].length) delete s[code]; }
+      saveManualStore(s);
+      if (itemByCode[code]) recomputeItem(itemByCode[code]);
+      renderChrome();
+      openManagePanel();
+    });
+  });
+  const clearAllBtn = document.getElementById('manage-clear-all');
+  if (clearAllBtn) clearAllBtn.addEventListener('click', ()=>{
+    if (!confirm(T('manageClearAllConfirm'))) return;
+    const codes = Object.keys(loadManualStore());
+    saveManualStore({});
+    codes.forEach(code=>{ if (itemByCode[code]) recomputeItem(itemByCode[code]); });
+    renderChrome();
+    openManagePanel();
+  });
+  document.getElementById('manage-export').addEventListener('click', ()=>{
+    const headers = [T('manageColCode'), T('manageColDate'), T('manageColType'), T('manageColQty'), T('manageColDoc')];
+    const lines = [headers.join(',')];
+    rows.forEach(r=>{
+      const vals = [r.code, r.entry.date, r.entry.type, r.entry.qty, r.entry.doc_no||'']
+        .map(v=> '"' + String(v).replace(/"/g,'""') + '"');
+      lines.push(vals.join(','));
+    });
+    const blob = new Blob(['﻿' + lines.join('\r\n')], {type:'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = T('manageExportFilename');
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+
+  overlay.classList.add('open');
+  drawer.classList.add('open');
+}
+document.getElementById('manage-btn').addEventListener('click', ()=>{ manageSelectedCode = null; openManagePanel(); });
+
+// ---- language switch ----
+document.querySelectorAll('.lang-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    LANG = btn.dataset.lang;
+    localStorage.setItem('dashboard_lang', LANG);
+    renderChrome();
+  });
+});
+
+// ---- theme toggle ----
+const root = document.documentElement;
+document.getElementById('theme-toggle').addEventListener('click', ()=>{
+  const cur = root.getAttribute('data-theme');
+  if (cur === 'dark') { root.setAttribute('data-theme','light'); }
+  else if (cur === 'light') { root.removeAttribute('data-theme'); }
+  else { root.setAttribute('data-theme','dark'); }
+});
+
+renderChrome();
+</script>
+</body>
+</html>
