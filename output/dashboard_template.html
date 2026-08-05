@@ -839,9 +839,17 @@ function computeStats(history, currentMin, currentMax){
   // things separately: typical size per issue (Z) and days between issues (P); forecast = Z/P,
   // corrected by the Syntetos-Boylan factor (1 - alpha/2) to remove Croston's known upward bias.
   const CROSTON_ALPHA = 0.2;
+  // need this many occurrences before trusting the smoothed estimate — with only 2-3 points the
+  // "smoothed" Z/P values ARE the raw data (no averaging has happened yet), so a single short gap
+  // between two events can extrapolate into a huge annualized rate
+  const CROSTON_MIN_OCCURRENCES = 4;
+  // sanity cap: never let the smoothed forecast exceed N x the simple lifetime average — guards
+  // against a cluster of closely-spaced transactions dragging the smoothed interval down and
+  // inflating the rate, with no later data to pull it back afterward
+  const CROSTON_MAX_MULTIPLE = 3.0;
   let usagePerYear = usagePerYearFlat, issuesPerYear = issuesPerYearFlat;
   let smoothedIssInterval = null;
-  if (nIss >= 2){
+  if (nIss >= CROSTON_MIN_OCCURRENCES){
     const sizesAll = iss.map(h=>Number(h.qty));
     const sizes = sizesAll.slice(1);
     const intervals = [];
@@ -855,6 +863,7 @@ function computeStats(history, currentMin, currentMax){
     usagePerYear = sbaDailyRate * 365;
     issuesPerYear = 365 / P;
     smoothedIssInterval = P;
+    if (usagePerYearFlat > 0) usagePerYear = Math.min(usagePerYear, usagePerYearFlat * CROSTON_MAX_MULTIPLE);
   }
 
   function avgInterval(dates){

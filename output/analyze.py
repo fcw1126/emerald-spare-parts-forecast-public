@@ -13,6 +13,12 @@ OUT_JSON = os.path.join(BASE, "output", "analysis.json")
 
 TODAY = pd.Timestamp("2026-08-03")
 CROSTON_ALPHA = 0.2  # smoothing constant for Croston/SBA intermittent-demand forecasting (typical range 0.1-0.3)
+CROSTON_MIN_OCCURRENCES = 4  # need this many issue events before trusting the smoothed estimate — with
+# only 2-3 points the "smoothed" Z/P values ARE the raw data (no averaging has happened yet), so a
+# single short gap between two events can extrapolate into a huge annualized rate
+CROSTON_MAX_MULTIPLE = 3.0  # sanity cap: never let the smoothed forecast exceed N x the simple lifetime
+# average — guards against a cluster of closely-spaced transactions (one busy month/project) dragging
+# the smoothed interval down and inflating the rate, with no later data to pull it back afterward
 
 tx = pd.read_csv(TX_CSV)
 tx["date"] = pd.to_datetime(tx["date"], format="%d/%m/%Y", errors="coerce")
@@ -80,7 +86,7 @@ for _, m in master.iterrows():
     usage_per_year = usage_per_year_flat
     issues_per_year = issues_per_year_flat
     smoothed_iss_interval = None
-    if n_iss >= 2:
+    if n_iss >= CROSTON_MIN_OCCURRENCES:
         iss_sorted = iss.sort_values("date")
         sizes_all = iss_sorted["iss_qty"].tolist()
         sizes = sizes_all[1:]  # first occurrence has no preceding interval yet
@@ -94,6 +100,8 @@ for _, m in master.iterrows():
         usage_per_year = sba_daily_rate * 365.0
         issues_per_year = 365.0 / P
         smoothed_iss_interval = P
+        if usage_per_year_flat > 0:
+            usage_per_year = min(usage_per_year, usage_per_year_flat * CROSTON_MAX_MULTIPLE)
 
     # average interval between consecutive REC events (replenishment cycle, days)
     rec_dates = rec["date"].sort_values().tolist()
