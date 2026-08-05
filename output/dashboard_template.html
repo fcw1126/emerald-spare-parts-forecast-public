@@ -551,10 +551,10 @@ const I18N = {
     csvButton: "匯出 Excel", csvFilename: "設備零件備料預測.xls",
     rowCount: (a,b) => `顯示 ${a} / ${b} 項`,
     thCode: "代碼", thName: "品名 / Model", thGroup: "群組", thLocation: "位置", thVendor: "廠商",
-    thFreq: "故障更換頻率", thIssuesPerYear: "年更換次數(次)", thUsageQty: "加權移動平均用量(個)", thCurMin: "目前 Min", thCurMax: "目前 Max",
+    thFreq: "故障更換頻率", thIssuesPerYear: "年更換次數(次)", thUsageQty: "Croston預測用量(個)", thCurMin: "目前 Min", thCurMax: "目前 Max",
     thRecoMin: "建議 Min", thRecoMax: "建議 Max", thDelta: "差異", thRecoNote: "建議說明",
     methodTitle: "計算方法：",
-    methodBody: "「年領用數量」改用「加權移動平均法」(Weighted Moving Average) 計算，不是把全部歷史平均在一起：只取最近 3 個已完整結束的年度，依新舊給予 1、2、3 的權重（最近一年權重最高=3，前年=2，大前年=1，中間沒有領用的年份也算 0，不會被忽略，超過 3 年前的資料則完全不計入），公式為 (3×最近年+2×次年+1×前年) ÷ (3+2+1)。這樣使用量上升或下降的趨勢會直接反映在建議值上，比單純平均更貼近近況。建議安全庫存(Min) = ⌈加權移動平均日用量 × 平均補貨週期天數 × 1.3 波動緩衝⌉，補貨週期取「相鄰兩次入庫的平均間隔天數」(若入庫紀錄不足則改用領用間隔)；建議最高庫存(Max) = 建議 Min + 平均單次領用/入庫數量。點開零件側欄可以同時看到「加權移動平均用量」與「歷史簡單平均」兩個數字，以及逐年長條圖，方便對照差異。更換次數少於 2 次或觀測期不足半年的品項，因歷史資料不足以判斷趨勢，維持原設定並標示「資料不足待觀察」。點擊任一列可查看該零件完整的歷史更換紀錄，並可開啟原始 STOCK CARD PDF 單據。本頁面所有數據皆於本機端計算與呈現，未上傳至任何外部伺服器。",
+    methodBody: "「年領用數量」改用「Croston's Method（SBA修正版）」計算，這是專門為間歇性需求(intermittent demand)設計的預測法——你這批零件大多是「平時不太用、偶爾才領一次」，用單純平均或近幾年平均都容易被大量沒有領用的空窗期拉低或被單一次大量領用拉高。做法是把資料拆成兩件事分別做指數平滑：①每次領用的數量(Z)，②相鄰兩次領用間隔的天數(P)，最後預測日用量 = (1-α/2)×(Z÷P)，α=0.2 為平滑係數，(1-α/2)是SBA修正項用來去除Croston原始公式的系統性高估。建議安全庫存(Min) = ⌈預測日用量 × 平均補貨週期天數 × 1.3 波動緩衝⌉，補貨週期優先取「相鄰兩次入庫的平均間隔天數」(入庫紀錄不足則改用Croston平滑後的領用間隔)；建議最高庫存(Max) = 建議 Min + 平均單次領用/入庫數量。點開零件側欄可以同時看到「Croston預測用量」與「歷史簡單平均」兩個數字，以及逐年長條圖，方便對照差異。更換次數少於 2 次或觀測期不足半年的品項，因歷史資料不足以判斷趨勢，維持原設定並標示「資料不足待觀察」。點擊任一列可查看該零件完整的歷史更換紀錄，並可開啟原始 STOCK CARD PDF 單據。本頁面所有數據皆於本機端計算與呈現，未上傳至任何外部伺服器。",
     freqLabel: {"高頻":"高頻","中頻":"中頻","低頻":"低頻","極少使用":"極少使用","從未領用":"從未領用"},
     recoLabel: {increase:"⚠️ 建議提高", decrease:"📉 建議降低", mixed:"🔀 建議調整範圍", unset:"❓ 從未設定備料", ok:"✅ 現行設定合理", nodata:"⏳ 資料不足待觀察"},
     recoShort: {increase:"建議提高", decrease:"建議降低", mixed:"建議調整", unset:"從未設定", ok:"現行合理", nodata:"資料不足"},
@@ -575,10 +575,10 @@ const I18N = {
       return `歷史資料不足，維持現行設定`;
     },
     drawerGroupLoc: "群組 / 位置", drawerVendor: "廠商", drawerFreq: "故障更換頻率", drawerIssues: "年更換次數(次)",
-    drawerUsageQty: "加權移動平均用量(個/年)", drawerUsageFlat: "歷史簡單平均(個/年)",
+    drawerUsageQty: "Croston預測用量(個/年)", drawerUsageFlat: "歷史簡單平均(個/年)",
     yearlyChartTitle: "📊 歷年領用數量",
-    yearlyChartHint: "長條為每年實際領用數量；藍色虛線＝加權移動平均預測用量(近3年權重1/2/3，用來計算建議值)，灰色點線＝不分年份的歷史簡單平均",
-    yearlyAvgLabel: (w,f) => `加權移動平均：${w} 個/年（驅動建議值）　·　簡單平均：${f} 個/年`,
+    yearlyChartHint: "長條為每年實際領用數量；藍色虛線＝Croston's Method(SBA)預測用量(拆成「每次領多少」與「隔多久領一次」分別做指數平滑，用來計算建議值)，灰色點線＝不分年份的歷史簡單平均",
+    yearlyAvgLabel: (w,f) => `Croston(SBA)：${w} 個/年（驅動建議值）　·　簡單平均：${f} 個/年`,
     yearPartialTag: "（至今）",
     drawerCurMinMax: "目前 Min / Max", drawerRecoMinMax: "建議 Min / Max",
     pdfLinkText: "開啟原始 STOCK CARD PDF 單據",
@@ -628,10 +628,10 @@ const I18N = {
     csvButton: "Export Excel", csvFilename: "spare_parts_forecast.xls",
     rowCount: (a,b) => `Showing ${a} / ${b} items`,
     thCode: "Code", thName: "Name / Model", thGroup: "Group", thLocation: "Location", thVendor: "Vendor",
-    thFreq: "Failure frequency", thIssuesPerYear: "Times/yr (visits)", thUsageQty: "WMA qty/yr (3yr)", thCurMin: "Current Min", thCurMax: "Current Max",
+    thFreq: "Failure frequency", thIssuesPerYear: "Times/yr (visits)", thUsageQty: "Croston (SBA) qty/yr", thCurMin: "Current Min", thCurMax: "Current Max",
     thRecoMin: "Suggested Min", thRecoMax: "Suggested Max", thDelta: "Delta", thRecoNote: "Recommendation",
     methodTitle: "Methodology:",
-    methodBody: "\"WMA qty/yr\" uses a Weighted Moving Average, not a flat lifetime average: only the last 3 completed calendar years are used, weighted 1, 2, 3 from oldest to newest (most recent year counts most; quiet years with zero usage still count as zero rather than being skipped; anything older than 3 years is dropped entirely) — weighted average = (3×latest + 2×prior + 1×year before) ÷ (3+2+1). A rising or falling trend moves the forecast directly instead of being smoothed away. Suggested Min = ceil(WMA daily usage × avg replenishment-cycle days × 1.3 variability buffer); cycle days = mean interval between consecutive receipts (falling back to the issue interval when receipts are sparse); suggested Max = suggested Min + the average quantity per issue/receipt. Open any part's drawer to see both the WMA rate and the simple lifetime average side by side, plus a year-by-year bar chart. Parts with fewer than 2 issues or under 6 months of history are flagged \"insufficient data\" and kept at their current setting. Click any row to see the full replacement history and open the original STOCK CARD PDF. All figures are computed and rendered locally — nothing is uploaded to any external server.",
+    methodBody: "\"Croston (SBA) qty/yr\" uses Croston's Method (Syntetos-Boylan correction) instead of a flat average — the standard forecasting technique for intermittent demand, which fits most of these parts (used rarely and irregularly, so a plain or windowed average gets dragged around by long quiet stretches or a single large issue). It smooths two things separately with exponential smoothing: the typical size of each issue (Z) and the days between issues (P). Forecast daily rate = (1 - alpha/2) x (Z / P), with alpha = 0.2 and the (1 - alpha/2) factor correcting Croston's known upward bias. Suggested Min = ceil(forecast daily usage x avg replenishment-cycle days x 1.3 variability buffer); cycle days = mean interval between consecutive receipts (falling back to Croston's smoothed issue interval when receipts are sparse); suggested Max = suggested Min + the average quantity per issue/receipt. Open any part's drawer to see both the Croston (SBA) rate and the simple lifetime average side by side, plus a year-by-year bar chart. Parts with fewer than 2 issues or under 6 months of history are flagged \"insufficient data\" and kept at their current setting. Click any row to see the full replacement history and open the original STOCK CARD PDF. All figures are computed and rendered locally — nothing is uploaded to any external server.",
     freqLabel: {"高頻":"High","中頻":"Medium","低頻":"Low","極少使用":"Rare","從未領用":"Never used"},
     recoLabel: {increase:"⚠️ Suggest increase", decrease:"📉 Suggest decrease", mixed:"🔀 Adjust the range", unset:"❓ Never configured", ok:"✅ Currently reasonable", nodata:"⏳ Insufficient data"},
     recoShort: {increase:"Increase", decrease:"Decrease", mixed:"Adjust", unset:"Unset", ok:"OK", nodata:"No data"},
@@ -652,10 +652,10 @@ const I18N = {
       return `Insufficient history — keep current setting`;
     },
     drawerGroupLoc: "Group / Location", drawerVendor: "Vendor", drawerFreq: "Failure frequency", drawerIssues: "Times/yr (visits)",
-    drawerUsageQty: "WMA qty/yr (3yr)", drawerUsageFlat: "Simple lifetime average/yr",
+    drawerUsageQty: "Croston (SBA) qty/yr", drawerUsageFlat: "Simple lifetime average/yr",
     yearlyChartTitle: "📊 Yearly quantity used",
-    yearlyChartHint: "Bars = actual quantity issued each year. Blue dashed line = weighted moving average forecast (last 3 yrs, weights 1/2/3, drives the recommendation); gray dotted line = simple lifetime average across all years",
-    yearlyAvgLabel: (w,f) => `WMA (3yr): ${w}/yr — drives the recommendation　·　Simple average: ${f}/yr`,
+    yearlyChartHint: "Bars = actual quantity issued each year. Blue dashed line = Croston's Method (SBA) forecast — separately smooths issue size and days-between-issues for intermittent demand, drives the recommendation; gray dotted line = simple lifetime average across all years",
+    yearlyAvgLabel: (w,f) => `Croston (SBA): ${w}/yr — drives the recommendation　·　Simple average: ${f}/yr`,
     yearPartialTag: " (YTD)",
     drawerCurMinMax: "Current Min / Max", drawerRecoMinMax: "Suggested Min / Max",
     pdfLinkText: "Open original STOCK CARD PDF",
@@ -705,10 +705,10 @@ const I18N = {
     csvButton: "ส่งออก Excel", csvFilename: "พยากรณ์อะไหล่.xls",
     rowCount: (a,b) => `แสดง ${a} / ${b} รายการ`,
     thCode: "รหัส", thName: "ชื่อ / Model", thGroup: "กลุ่ม", thLocation: "ตำแหน่ง", thVendor: "ผู้ขาย",
-    thFreq: "ความถี่การเสีย/เปลี่ยน", thIssuesPerYear: "จำนวนครั้ง/ปี", thUsageQty: "WMA 3 ปี (ชิ้น/ปี)", thCurMin: "Min ปัจจุบัน", thCurMax: "Max ปัจจุบัน",
+    thFreq: "ความถี่การเสีย/เปลี่ยน", thIssuesPerYear: "จำนวนครั้ง/ปี", thUsageQty: "Croston (SBA) ชิ้น/ปี", thCurMin: "Min ปัจจุบัน", thCurMax: "Max ปัจจุบัน",
     thRecoMin: "Min แนะนำ", thRecoMax: "Max แนะนำ", thDelta: "ผลต่าง", thRecoNote: "คำแนะนำ",
     methodTitle: "วิธีคำนวณ:",
-    methodBody: "\"WMA 3 ปี\" ใช้วิธีค่าเฉลี่ยเคลื่อนที่ถ่วงน้ำหนัก (Weighted Moving Average) แทนค่าเฉลี่ยรวมทุกปี: นำเฉพาะ 3 ปีปฏิทินล่าสุดที่จบสมบูรณ์แล้วมาคำนวณ โดยให้น้ำหนัก 1, 2, 3 จากปีเก่าไปปีใหม่ (ปีล่าสุดมีน้ำหนักมากที่สุด=3, ปีที่ไม่มีการเบิกนับเป็น 0 ไม่ถูกข้าม, ข้อมูลเก่ากว่า 3 ปีจะไม่ถูกนำมาคิดเลย) สูตร = (3×ปีล่าสุด + 2×ปีก่อนหน้า + 1×ปีก่อนนั้น) ÷ (3+2+1) ทำให้แนวโน้มการใช้งานที่เพิ่มขึ้นหรือลดลงส่งผลต่อคำแนะนำโดยตรง Min แนะนำ = ⌈อัตราการใช้ตาม WMA ต่อวัน × จำนวนวันรอบเติมสต๊อกเฉลี่ย × 1.3 (ค่าบัฟเฟอร์ความผันผวน)⌉ และ Max แนะนำ = Min แนะนำ + ปริมาณเฉลี่ยต่อครั้งของการเบิก/รับเข้า เปิดแผงรายละเอียดของแต่ละอะไหล่เพื่อดูทั้งค่า WMA และค่าเฉลี่ยทั้งหมดเทียบกัน พร้อมกราฟแท่งรายปี อะไหล่ที่มีการเบิกน้อยกว่า 2 ครั้ง หรือมีประวัติน้อยกว่า 6 เดือน จะถูกจัดเป็น \"ข้อมูลไม่เพียงพอ\" และคงค่าเดิมไว้ก่อน คลิกแต่ละแถวเพื่อดูประวัติการเบิกจ่ายทั้งหมด และเปิดไฟล์ STOCK CARD PDF ต้นฉบับได้ ข้อมูลทั้งหมดในหน้านี้ประมวลผลและแสดงผลในเครื่องเท่านั้น ไม่มีการอัปโหลดขึ้นเซิร์ฟเวอร์ภายนอกใดๆ",
+    methodBody: "\"Croston (SBA)\" ใช้ Croston's Method (ปรับด้วย Syntetos-Boylan) แทนค่าเฉลี่ยรวม ซึ่งเป็นวิธีมาตรฐานสำหรับความต้องการแบบไม่ต่อเนื่อง (intermittent demand) เหมาะกับอะไหล่ส่วนใหญ่ที่เบิกไม่บ่อยและไม่สม่ำเสมอ วิธีนี้ทำ exponential smoothing แยกกัน 2 ค่า: ขนาดการเบิกแต่ละครั้ง (Z) และจำนวนวันระหว่างครั้งที่เบิก (P) พยากรณ์อัตราต่อวัน = (1 - alpha/2) × (Z ÷ P) โดย alpha = 0.2 และตัวคูณ (1 - alpha/2) ใช้แก้อคติที่ทำให้ Croston ดั้งเดิมประเมินสูงเกินไป Min แนะนำ = ⌈อัตราการใช้ที่พยากรณ์ต่อวัน × จำนวนวันรอบเติมสต๊อกเฉลี่ย × 1.3 (ค่าบัฟเฟอร์ความผันผวน)⌉ และ Max แนะนำ = Min แนะนำ + ปริมาณเฉลี่ยต่อครั้งของการเบิก/รับเข้า เปิดแผงรายละเอียดของแต่ละอะไหล่เพื่อดูทั้งค่า Croston (SBA) และค่าเฉลี่ยทั้งหมดเทียบกัน พร้อมกราฟแท่งรายปี อะไหล่ที่มีการเบิกน้อยกว่า 2 ครั้ง หรือมีประวัติน้อยกว่า 6 เดือน จะถูกจัดเป็น \"ข้อมูลไม่เพียงพอ\" และคงค่าเดิมไว้ก่อน คลิกแต่ละแถวเพื่อดูประวัติการเบิกจ่ายทั้งหมด และเปิดไฟล์ STOCK CARD PDF ต้นฉบับได้ ข้อมูลทั้งหมดในหน้านี้ประมวลผลและแสดงผลในเครื่องเท่านั้น ไม่มีการอัปโหลดขึ้นเซิร์ฟเวอร์ภายนอกใดๆ",
     freqLabel: {"高頻":"ใช้บ่อยมาก","中頻":"ใช้ปานกลาง","低頻":"ใช้น้อย","極少使用":"ใช้น้อยมาก","從未領用":"ไม่เคยเบิก"},
     recoLabel: {increase:"⚠️ แนะนำเพิ่มสต๊อก", decrease:"📉 แนะนำลดสต๊อก", mixed:"🔀 แนะนำปรับช่วง", unset:"❓ ยังไม่ได้ตั้งค่า", ok:"✅ การตั้งค่าเหมาะสมแล้ว", nodata:"⏳ ข้อมูลไม่เพียงพอ"},
     recoShort: {increase:"เพิ่มสต๊อก", decrease:"ลดสต๊อก", mixed:"ปรับช่วง", unset:"ยังไม่ตั้งค่า", ok:"เหมาะสมแล้ว", nodata:"ข้อมูลไม่พอ"},
@@ -729,10 +729,10 @@ const I18N = {
       return `ข้อมูลไม่เพียงพอ คงค่าเดิมไว้ก่อน`;
     },
     drawerGroupLoc: "กลุ่ม / ตำแหน่ง", drawerVendor: "ผู้ขาย", drawerFreq: "ความถี่การเสีย/เปลี่ยน", drawerIssues: "จำนวนครั้ง/ปี",
-    drawerUsageQty: "WMA 3 ปี (ชิ้น/ปี)", drawerUsageFlat: "ค่าเฉลี่ยทั้งหมด (ชิ้น/ปี)",
+    drawerUsageQty: "Croston (SBA) ชิ้น/ปี", drawerUsageFlat: "ค่าเฉลี่ยทั้งหมด (ชิ้น/ปี)",
     yearlyChartTitle: "📊 ปริมาณการเบิกรายปี",
-    yearlyChartHint: "แท่ง = ปริมาณที่เบิกจริงในแต่ละปี, เส้นประสีน้ำเงิน = ค่าเฉลี่ยเคลื่อนที่ถ่วงน้ำหนัก (WMA) 3 ปีล่าสุด น้ำหนัก 1/2/3 (ใช้คำนวณคำแนะนำ), เส้นจุดสีเทา = ค่าเฉลี่ยทั้งหมดแบบไม่ถ่วงน้ำหนัก",
-    yearlyAvgLabel: (w,f) => `WMA 3 ปี: ${w} ชิ้น/ปี (ใช้คำนวณคำแนะนำ)　·　ค่าเฉลี่ย: ${f} ชิ้น/ปี`,
+    yearlyChartHint: "แท่ง = ปริมาณที่เบิกจริงในแต่ละปี, เส้นประสีน้ำเงิน = ค่าพยากรณ์ Croston's Method (SBA) ซึ่งปรับค่าเฉลี่ยแบบ exponential smoothing แยกกันสำหรับ \"ขนาดการเบิกแต่ละครั้ง\" และ \"ระยะห่างระหว่างครั้ง\" เหมาะกับความต้องการแบบไม่ต่อเนื่อง (ใช้คำนวณคำแนะนำ), เส้นจุดสีเทา = ค่าเฉลี่ยทั้งหมดแบบไม่ถ่วงน้ำหนัก",
+    yearlyAvgLabel: (w,f) => `Croston (SBA): ${w} ชิ้น/ปี (ใช้คำนวณคำแนะนำ)　·　ค่าเฉลี่ย: ${f} ชิ้น/ปี`,
     yearPartialTag: " (ถึงปัจจุบัน)",
     drawerCurMinMax: "Min / Max ปัจจุบัน", drawerRecoMinMax: "Min / Max แนะนำ",
     pdfLinkText: "เปิดไฟล์ STOCK CARD PDF ต้นฉบับ",
@@ -834,32 +834,27 @@ function computeStats(history, currentMin, currentMax){
   const usagePerYearFlat = spanYears > 0 ? totalIss / spanYears : 0;
   const issuesPerYearFlat = spanYears > 0 ? nIss / spanYears : 0;
 
-  // weighted moving average (mirrors analyze.py): take the last WMA_WINDOW completed calendar
-  // years, weighted 1,2,...,N oldest-to-newest (most recent year counts most). Years outside the
-  // window are dropped entirely — unlike an exponential decay over all history — so recent trend
-  // actually moves the forecast instead of being diluted by old, no-longer-representative years.
-  const WMA_WINDOW = 3;
+  // Croston's method (SBA variant, mirrors analyze.py): most parts are used rarely and irregularly
+  // ("intermittent demand"), which a plain or windowed average handles poorly. Croston smooths two
+  // things separately: typical size per issue (Z) and days between issues (P); forecast = Z/P,
+  // corrected by the Syntetos-Boylan factor (1 - alpha/2) to remove Croston's known upward bias.
+  const CROSTON_ALPHA = 0.2;
   let usagePerYear = usagePerYearFlat, issuesPerYear = issuesPerYearFlat;
-  if (nIss > 0 && firstDate){
-    const byYearQty = {}, byYearCnt = {};
-    iss.forEach(h=>{
-      const y = new Date(h.date).getFullYear();
-      byYearQty[y] = (byYearQty[y]||0) + Number(h.qty);
-      byYearCnt[y] = (byYearCnt[y]||0) + 1;
-    });
-    const curYear = TODAY.getFullYear();
-    const endYear = curYear - 1;
-    const windowStart = Math.max(firstDate.getFullYear(), endYear - WMA_WINDOW + 1);
-    if (endYear >= windowStart){
-      let wSum=0, wqSum=0, wcSum=0, w=1;
-      for (let y=windowStart; y<=endYear; y++, w++){
-        wSum += w;
-        wqSum += w * (byYearQty[y]||0);
-        wcSum += w * (byYearCnt[y]||0);
-      }
-      usagePerYear = wqSum / wSum;
-      issuesPerYear = wcSum / wSum;
+  let smoothedIssInterval = null;
+  if (nIss >= 2){
+    const sizesAll = iss.map(h=>Number(h.qty));
+    const sizes = sizesAll.slice(1);
+    const intervals = [];
+    for (let i=1;i<iss.length;i++) intervals.push(Math.max(daysBetween(new Date(iss[i-1].date), new Date(iss[i].date)), 1));
+    let Z = sizes[0], P = intervals[0];
+    for (let i=1;i<sizes.length;i++){
+      Z = CROSTON_ALPHA*sizes[i] + (1-CROSTON_ALPHA)*Z;
+      P = CROSTON_ALPHA*intervals[i] + (1-CROSTON_ALPHA)*P;
     }
+    const sbaDailyRate = (1 - CROSTON_ALPHA/2) * (Z / P);
+    usagePerYear = sbaDailyRate * 365;
+    issuesPerYear = 365 / P;
+    smoothedIssInterval = P;
   }
 
   function avgInterval(dates){
@@ -887,7 +882,7 @@ function computeStats(history, currentMin, currentMax){
     recoMin = currentMin; recoMax = currentMax;
   } else {
     const safetyFactor = 1.3;
-    let cycle = avgRecInterval || avgIssInterval || 90;
+    let cycle = avgRecInterval || smoothedIssInterval || avgIssInterval || 90;
     cycle = Math.min(Math.max(cycle, 14), 365);
     const rawMin = dailyUsage * cycle * safetyFactor;
     recoMin = Math.max(1, Math.ceil(rawMin));

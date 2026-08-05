@@ -12,7 +12,7 @@ MASTER_XLSX = os.path.join(BASE, "data.xlsx")
 OUT_JSON = os.path.join(BASE, "output", "analysis.json")
 
 TODAY = pd.Timestamp("2026-08-03")
-WMA_WINDOW = 3  # weighted moving average: use the last N completed calendar years, weights 1,2,...,N (oldest to newest)
+CROSTON_ALPHA = 0.2  # smoothing constant for Croston/SBA intermittent-demand forecasting (typical range 0.1-0.3)
 
 tx = pd.read_csv(TX_CSV)
 tx["date"] = pd.to_datetime(tx["date"], format="%d/%m/%Y", errors="coerce")
@@ -68,38 +68,38 @@ for _, m in master.iterrows():
     usage_per_year_flat = (total_iss_qty / span_years) if span_years > 0 else 0.0
     issues_per_year_flat = (n_iss / span_years) if span_years > 0 else 0.0
 
-    # weighted moving average (WMA): take the last WMA_WINDOW completed calendar years and weight
-    # them 1, 2, ..., N from oldest to newest (most recent year counts most), so a declining/rising
-    # trend actually moves the forecast instead of being smoothed away by the full lifetime average.
-    # Years outside the window are dropped entirely (unlike an exponential decay over all history).
+    # Croston's method (SBA variant): most of these parts are used rarely and irregularly —
+    # "intermittent demand" in forecasting terms — which a plain average or a moving-window average
+    # handles poorly (long quiet stretches drown out the signal, or a window lands on all-zero years).
+    # Croston separates the series into two things and smooths each independently with its own
+    # exponential average: how big each issue tends to be (Z), and how many days pass between issues
+    # (P). The forecast rate is Z/P, corrected by the Syntetos-Boylan factor (1 - alpha/2) to remove
+    # Croston's known upward bias. Smoothed P also becomes the fallback replenishment-cycle estimate.
+    iss_dates = iss["date"].sort_values().tolist()
+    iss_intervals = [(iss_dates[i+1] - iss_dates[i]).days for i in range(len(iss_dates)-1)]
     usage_per_year = usage_per_year_flat
     issues_per_year = issues_per_year_flat
-    if n_iss > 0:
-        iss_y = iss.copy()
-        iss_y["year"] = iss_y["date"].dt.year
-        by_year_qty = iss_y.groupby("year")["iss_qty"].sum()
-        by_year_cnt = iss_y.groupby("year").size()
-        cur_year = TODAY.year
-        end_year = cur_year - 1  # last fully-completed calendar year
-        window_start = max(int(first_date.year), end_year - WMA_WINDOW + 1)
-        if end_year >= window_start:
-            # fill every year in the window with 0, not just years that had a transaction —
-            # otherwise a sporadic item's "quiet" years vanish instead of dragging the average down
-            full_years = list(range(window_start, end_year + 1))
-            qty_vals = np.array([float(by_year_qty.get(y, 0.0)) for y in full_years])
-            cnt_vals = np.array([float(by_year_cnt.get(y, 0)) for y in full_years])
-            weights = np.arange(1, len(full_years) + 1)  # oldest in window=1 ... most recent=N
-            usage_per_year = float((weights * qty_vals).sum() / weights.sum())
-            issues_per_year = float((weights * cnt_vals).sum() / weights.sum())
+    smoothed_iss_interval = None
+    if n_iss >= 2:
+        iss_sorted = iss.sort_values("date")
+        sizes_all = iss_sorted["iss_qty"].tolist()
+        sizes = sizes_all[1:]  # first occurrence has no preceding interval yet
+        intervals = [max(d, 1) for d in iss_intervals]
+        Z = sizes[0]
+        P = intervals[0]
+        for i in range(1, len(sizes)):
+            Z = CROSTON_ALPHA * sizes[i] + (1 - CROSTON_ALPHA) * Z
+            P = CROSTON_ALPHA * intervals[i] + (1 - CROSTON_ALPHA) * P
+        sba_daily_rate = (1 - CROSTON_ALPHA / 2) * (Z / P)
+        usage_per_year = sba_daily_rate * 365.0
+        issues_per_year = 365.0 / P
+        smoothed_iss_interval = P
 
     # average interval between consecutive REC events (replenishment cycle, days)
     rec_dates = rec["date"].sort_values().tolist()
     rec_intervals = [(rec_dates[i+1] - rec_dates[i]).days for i in range(len(rec_dates)-1)]
     avg_rec_interval = float(np.mean(rec_intervals)) if rec_intervals else None
 
-    # average interval between consecutive ISS events
-    iss_dates = iss["date"].sort_values().tolist()
-    iss_intervals = [(iss_dates[i+1] - iss_dates[i]).days for i in range(len(iss_dates)-1)]
     avg_iss_interval = float(np.mean(iss_intervals)) if iss_intervals else None
 
     avg_iss_qty_per_tx = (total_iss_qty / n_iss) if n_iss else 0.0
@@ -124,9 +124,12 @@ for _, m in master.iterrows():
 
     # --- recommendation logic ---
     # recommended Min (safety stock): cover usage during one replenishment cycle
-    # cycle length: prefer observed avg interval between restocks (REC), fallback to avg ISS interval, fallback to 90 days
+    # cycle length: prefer observed avg interval between restocks (REC); fallback to Croston's
+    # smoothed issue interval (P) which already discounts stale old gaps; last resort plain average
     if avg_rec_interval and avg_rec_interval > 0:
         cycle_days = avg_rec_interval
+    elif smoothed_iss_interval and smoothed_iss_interval > 0:
+        cycle_days = smoothed_iss_interval
     elif avg_iss_interval and avg_iss_interval > 0:
         cycle_days = avg_iss_interval
     else:
