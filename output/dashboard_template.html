@@ -842,11 +842,11 @@ function computeStats(history, currentMin, currentMax){
   // need this many occurrences before trusting the smoothed estimate — with only 2-3 points the
   // "smoothed" Z/P values ARE the raw data (no averaging has happened yet), so a single short gap
   // between two events can extrapolate into a huge annualized rate
-  const CROSTON_MIN_OCCURRENCES = 4;
+  const CROSTON_MIN_OCCURRENCES = 6;
   // sanity cap: never let the smoothed forecast exceed N x the simple lifetime average — guards
   // against a cluster of closely-spaced transactions dragging the smoothed interval down and
   // inflating the rate, with no later data to pull it back afterward
-  const CROSTON_MAX_MULTIPLE = 3.0;
+  const CROSTON_MAX_MULTIPLE = 2.0;
   let usagePerYear = usagePerYearFlat, issuesPerYear = issuesPerYearFlat;
   let smoothedIssInterval = null;
   if (nIss >= CROSTON_MIN_OCCURRENCES){

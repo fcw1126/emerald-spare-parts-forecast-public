@@ -13,10 +13,10 @@ OUT_JSON = os.path.join(BASE, "output", "analysis.json")
 
 TODAY = pd.Timestamp("2026-08-03")
 CROSTON_ALPHA = 0.2  # smoothing constant for Croston/SBA intermittent-demand forecasting (typical range 0.1-0.3)
-CROSTON_MIN_OCCURRENCES = 4  # need this many issue events before trusting the smoothed estimate — with
-# only 2-3 points the "smoothed" Z/P values ARE the raw data (no averaging has happened yet), so a
-# single short gap between two events can extrapolate into a huge annualized rate
-CROSTON_MAX_MULTIPLE = 3.0  # sanity cap: never let the smoothed forecast exceed N x the simple lifetime
+CROSTON_MIN_OCCURRENCES = 6  # need this many issue events before trusting the smoothed estimate — with
+# only a few points the "smoothed" Z/P values are still close to the raw data (little averaging has
+# happened yet), so a short gap between two events can extrapolate into a huge annualized rate
+CROSTON_MAX_MULTIPLE = 2.0  # sanity cap: never let the smoothed forecast exceed N x the simple lifetime
 # average — guards against a cluster of closely-spaced transactions (one busy month/project) dragging
 # the smoothed interval down and inflating the rate, with no later data to pull it back afterward
 
